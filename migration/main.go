@@ -1,7 +1,6 @@
 package main
 
 import (
-	"auth-test/models"
 	"fmt"
 	"log"
 
@@ -12,6 +11,7 @@ import (
 
 	"auth-test/infra"
 	"auth-test/infra/db"
+	"auth-test/models"
 )
 
 func main() {
