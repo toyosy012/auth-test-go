@@ -8,7 +8,8 @@ type UserAccount struct {
 }
 
 type UserAccountRepository interface {
-	Find(id string) (*UserAccount, error)
+	Find(string) (*UserAccount, error)
+	FindByEmail(string) (*UserAccount, error)
 	List() ([]UserAccount, error)
 	Insert(string, string, string) (*UserAccount, error)
 	Update(UserAccount) (*UserAccount, error)
