@@ -28,7 +28,6 @@ func (h UserAccountHandler) Get(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("%v", userAccount)
 	c.JSON(http.StatusOK, userAccount)
 }
 
