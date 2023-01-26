@@ -24,12 +24,12 @@ func main() {
 	userAccountSvc := services.UserAccount{
 		Repo: userAccountRepo,
 	}
-	userAccountController := controller.UserAccount{
-		Service: userAccountSvc,
+	userAccountController := controller.UserAccountHandler{
+		UserAccountService: userAccountSvc,
 	}
 
-	authorizer := auth.NewTokenAuthorizer(env.EncryptSecret)
-	authSvc := services.NewAuthorizer(userAccountRepo, authorizer)
+	authentication := auth.NewTokenAuthentication(env.EncryptSecret)
+	authSvc := services.NewAuthorizer(userAccountRepo, authentication)
 
 	loginController := controller.NewLogin(authSvc)
 

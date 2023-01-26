@@ -10,8 +10,8 @@ import (
 	"auth-test/services"
 )
 
-type UserAccount struct {
-	Service services.UserAccount
+type UserAccountHandler struct {
+	UserAccountService services.UserAccount
 }
 
 type InputUserAccount struct {
@@ -20,9 +20,9 @@ type InputUserAccount struct {
 	Password string `json:"password" required:"true"`
 }
 
-func (a UserAccount) Get(c *gin.Context) {
+func (h UserAccountHandler) Get(c *gin.Context) {
 	accountID := c.Param("id")
-	userAccount, err := a.Service.Find(accountID)
+	userAccount, err := h.UserAccountService.Find(accountID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
@@ -32,8 +32,8 @@ func (a UserAccount) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, userAccount)
 }
 
-func (a UserAccount) List(c *gin.Context) {
-	accounts, err := a.Service.List()
+func (h UserAccountHandler) List(c *gin.Context) {
+	accounts, err := h.UserAccountService.List()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
@@ -42,7 +42,7 @@ func (a UserAccount) List(c *gin.Context) {
 	c.JSON(http.StatusOK, accounts)
 }
 
-func (a *UserAccount) Create(c *gin.Context) {
+func (h *UserAccountHandler) Create(c *gin.Context) {
 	var account InputUserAccount
 	err := c.Bind(&account)
 	if err != nil {
@@ -50,7 +50,7 @@ func (a *UserAccount) Create(c *gin.Context) {
 		return
 	}
 
-	result, err := a.Service.Create(models.UserAccount{
+	result, err := h.UserAccountService.Create(models.UserAccount{
 		Email:    account.Email,
 		Name:     account.Name,
 		Password: account.Password,
@@ -65,7 +65,7 @@ func (a *UserAccount) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (a *UserAccount) Update(c *gin.Context) {
+func (h *UserAccountHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var account InputUserAccount
 	err := c.BindJSON(&account)
@@ -74,7 +74,7 @@ func (a *UserAccount) Update(c *gin.Context) {
 		return
 	}
 
-	result, err := a.Service.Update(models.UserAccount{
+	result, err := h.UserAccountService.Update(models.UserAccount{
 		ID:       id,
 		Email:    account.Email,
 		Name:     account.Name,
@@ -89,9 +89,9 @@ func (a *UserAccount) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (a UserAccount) Delete(c *gin.Context) {
+func (h UserAccountHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
-	err := a.Service.Delete(id)
+	err := h.UserAccountService.Delete(id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
