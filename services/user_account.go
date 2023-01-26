@@ -14,6 +14,14 @@ func (a UserAccount) Find(id string) (*models.UserAccount, error) {
 	return account, nil
 }
 
+func (a UserAccount) FindByEmail(email string) (*models.UserAccount, error) {
+	account, err := a.Repo.FindByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	return account, nil
+}
+
 func (a UserAccount) List() ([]models.UserAccount, error) {
 	accounts, err := a.Repo.List()
 	if err != nil {
