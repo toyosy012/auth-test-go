@@ -29,7 +29,7 @@ func main() {
 	}
 
 	authorizer := auth.NewTokenAuthorizer(env.EncryptSecret)
-	authSvc := services.NewAuth(userAccountRepo, authorizer)
+	authSvc := services.NewAuthorizer(userAccountRepo, authorizer)
 
 	loginController := controller.NewLogin(authSvc)
 
