@@ -70,6 +70,21 @@ func (i *UserAccountRepositoryImpl) Find(id string) (*models.UserAccount, error)
 	}, nil
 }
 
+func (i *UserAccountRepositoryImpl) FindByEmail(email string) (*models.UserAccount, error) {
+	var account UserAccount
+	result := i.mysql.Where("email=?", email).First(&account)
+	if err := result.Error; err != nil {
+		return nil, err
+	}
+
+	return &models.UserAccount{
+		ID:       account.ID.String(),
+		Email:    account.Email,
+		Name:     account.Name,
+		Password: account.Hash,
+	}, nil
+}
+
 func (i *UserAccountRepositoryImpl) List() ([]models.UserAccount, error) {
 	var accounts []UserAccount
 	result := i.mysql.Find(&accounts)
