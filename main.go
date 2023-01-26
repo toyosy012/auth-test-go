@@ -2,6 +2,7 @@ package main
 
 import (
 	"auth-test/infra"
+	"auth-test/infra/auth"
 	"auth-test/infra/controller"
 	"auth-test/infra/db"
 	"auth-test/services"
@@ -26,11 +27,22 @@ func main() {
 	userAccountController := controller.UserAccount{
 		Service: userAccountSvc,
 	}
+
+	authorizer := auth.NewTokenAuthorizer(env.EncryptSecret)
+	authSvc := services.NewAuth(userAccountRepo, authorizer)
+
+	loginController := controller.NewLogin(authSvc)
+
 	router := gin.Default()
+	router.POST("/login", loginController.Login)
 	router.GET("/users/:id", userAccountController.Get)
 	router.GET("/users", userAccountController.List)
-	router.POST("/users/new", userAccountController.Create)
-	router.PATCH("/users/:id", userAccountController.Update)
-	router.DELETE("/users/:id", userAccountController.Delete)
+
+	authRouter := router.Group("/users").Use(loginController.CheckAuthentication)
+	{
+		authRouter.POST("new", userAccountController.Create)
+		authRouter.PATCH(":id", userAccountController.Update)
+		authRouter.DELETE(":id", userAccountController.Delete)
+	}
 	router.Run("localhost:8080")
 }
