@@ -3,7 +3,7 @@ module auth-test
 go 1.19
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/golang-jwt/jwt/v4 v4.4.3 // indirect
 	github.com/gin-gonic/gin v1.7.2
 	github.com/google/uuid v1.3.0
 	github.com/kelseyhightower/envconfig v1.4.0
