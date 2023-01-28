@@ -21,8 +21,12 @@ func main() {
 		log.Fatalf("環境変数の取得に失敗 : %s\n", err.Error())
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", env.User, env.Password, env.Host, env.Port, env.Name)
-	userAccountRepo, err := db.NewUserAccountRepositoryImpl(dsn)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=UTC", env.User, env.Password, env.Host, env.Port, env.Name)
+	dbClient, err := db.NewClient(dsn)
+	if err != nil {
+		log.Fatalf("データベースクライアントの生成に失敗 : %s\n", err.Error())
+	}
+	userAccountRepo, err := db.NewUserAccountRepositoryImpl(*dbClient)
 	userAccountSvc := services.UserAccount{
 		Repo: userAccountRepo,
 	}
@@ -40,8 +44,8 @@ func main() {
 	router.GET("/users", userAccountController.List)
 	router.POST("new", userAccountController.Create)
 
-	userSessionRepo := db.NewUserSessionRepo()
-	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo, userSessionRepo)
+	userSessionRepo := db.NewUserSessionRepo(*dbClient)
+	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo, userSessionRepo, env.AvailabilityTime)
 	storedAuth := controller.NewStoredAuth(storedAuthSvc)
 	v0 := router.Group("/v0")
 	{

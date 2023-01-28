@@ -1,6 +1,10 @@
 package services
 
 import (
+	"time"
+
+	"github.com/google/uuid"
+
 	"auth-test/models"
 )
 
@@ -53,16 +57,22 @@ type StoredAuthorizer interface {
 	logout
 }
 
-func NewStoredAuthorization(a models.UserAccountRepository, s models.UserSessionAccessor) StoredAuthorization {
+func NewStoredAuthorization(
+	a models.UserAccountRepository,
+	s models.UserSessionAccessor,
+	availabilityTime time.Duration,
+) StoredAuthorization {
 	return StoredAuthorization{
-		userAccountRepo: a,
-		userSessionRepo: s,
+		userAccountRepo:  a,
+		userSessionRepo:  s,
+		availabilityTime: availabilityTime,
 	}
 }
 
 type StoredAuthorization struct {
-	userAccountRepo models.UserAccountRepository
-	userSessionRepo models.UserSessionAccessor
+	userAccountRepo  models.UserAccountRepository
+	userSessionRepo  models.UserSessionAccessor
+	availabilityTime time.Duration
 }
 
 func (a StoredAuthorization) Sign(email, password string) (string, error) {
@@ -76,7 +86,8 @@ func (a StoredAuthorization) Sign(email, password string) (string, error) {
 		return "", err
 	}
 
-	return a.userSessionRepo.Register(email, password)
+	s := models.NewSession(account.ID, uuid.New().String(), time.Now().UTC().Add(a.availabilityTime))
+	return a.userSessionRepo.Register(s)
 }
 
 func (a StoredAuthorization) Verify(token string) error {
