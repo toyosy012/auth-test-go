@@ -22,5 +22,5 @@ type UserSessionAccessor interface {
 	Register(Session) (string, error)
 	Verify(string) error
 	FindUser(string) (string, error)
-	Delete(string) error
+	Delete(string, string) error
 }

@@ -74,6 +74,10 @@ func (r UserSessionRepository) FindUser(token string) (string, error) {
 	return sess.Owner, nil
 }
 
-func (r UserSessionRepository) Delete(string) error {
+func (r UserSessionRepository) Delete(owner, token string) error {
+	result := r.client.Delete(UserSession{Owner: owner, Token: token})
+	if err := result.Error; err != nil {
+		return err
+	}
 	return nil
 }

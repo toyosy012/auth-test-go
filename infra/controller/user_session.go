@@ -134,8 +134,9 @@ func (s StoredAuth) CheckAuthenticatedOwner(c *gin.Context) {
 func (s StoredAuth) Logout(c *gin.Context) {
 	t := c.GetHeader("Authorization")
 	token := strings.Replace(t, "Bearer ", "", 1)
-	if err := s.authorizer.SignOut(token); err != nil {
-		c.JSON(http.StatusNotFound, err)
+	owner := c.Param("id")
+	if err := s.authorizer.SignOut(owner, token); err != nil {
+		c.AbortWithError(http.StatusNotFound, err)
 		return
 	}
 	return

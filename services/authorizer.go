@@ -52,7 +52,7 @@ type StoredAuthorizer interface {
 	Sign(string, string) (string, error)
 	Verify(string) error
 	FindUser(string, string) error
-	SignOut(string) error
+	SignOut(string, string) error
 }
 
 func NewStoredAuthorization(
@@ -110,6 +110,6 @@ func (a StoredAuthorization) FindUser(id, token string) error {
 	return nil
 }
 
-func (a StoredAuthorization) SignOut(token string) error {
-	return a.userSessionRepo.Delete(token)
+func (a StoredAuthorization) SignOut(owner, token string) error {
+	return a.userSessionRepo.Delete(owner, token)
 }
