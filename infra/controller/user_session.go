@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -28,7 +27,6 @@ type JWTAuth struct {
 }
 
 func (s JWTAuth) Login(c *gin.Context) {
-	now := time.Now()
 	var form loginForm
 	err := c.Bind(&form)
 	if err != nil {
@@ -36,7 +34,7 @@ func (s JWTAuth) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := s.authorizer.Sign(form.Email, form.Password, now)
+	token, err := s.authorizer.Sign(form.Email, form.Password)
 	if err != nil {
 		c.JSON(http.StatusForbidden, err.Error())
 		return
@@ -48,7 +46,6 @@ func (s JWTAuth) Login(c *gin.Context) {
 }
 
 func (s JWTAuth) CheckAuthentication(c *gin.Context) {
-	now := time.Now()
 	t := c.GetHeader("Authorization")
 
 	token := strings.Replace(t, "Bearer ", "", 1)
@@ -58,7 +55,7 @@ func (s JWTAuth) CheckAuthentication(c *gin.Context) {
 		return
 	}
 
-	err := s.authorizer.Verify(token, now)
+	err := s.authorizer.Verify(token)
 	if err != nil {
 		c.AbortWithStatus(http.StatusForbidden)
 		c.Writer.Write([]byte(err.Error()))
