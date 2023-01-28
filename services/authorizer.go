@@ -48,13 +48,11 @@ func (a Authorizer) Verify(token string) error {
 	return a.authorizer.Verify(token)
 }
 
-type logout interface {
-	SignOut(string) error
-}
-
 type StoredAuthorizer interface {
-	Login
-	logout
+	Sign(string, string) (string, error)
+	Verify(string) error
+	FindUser(string, string) error
+	SignOut(string) error
 }
 
 func NewStoredAuthorization(
@@ -91,7 +89,25 @@ func (a StoredAuthorization) Sign(email, password string) (string, error) {
 }
 
 func (a StoredAuthorization) Verify(token string) error {
-	return a.userSessionRepo.Verify(token)
+	err := a.userSessionRepo.Verify(token)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a StoredAuthorization) FindUser(id, token string) error {
+	owner, err := a.userSessionRepo.FindUser(token)
+	if err != nil {
+		return err
+	}
+
+	if owner != id {
+		return errors.New(http.StatusText(http.StatusNotFound))
+	}
+
+	return nil
 }
 
 func (a StoredAuthorization) SignOut(token string) error {

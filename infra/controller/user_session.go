@@ -99,13 +99,32 @@ func (s StoredAuth) CheckAuthentication(c *gin.Context) {
 
 	token := strings.Replace(t, "Bearer ", "", 1)
 	if "" == token {
-		c.JSON(http.StatusBadRequest, errors.New("empty token"))
+		c.AbortWithError(http.StatusBadRequest, errors.New("empty token"))
 		return
 	}
 
 	err := s.authorizer.Verify(token)
 	if err != nil {
-		c.JSON(http.StatusForbidden, err)
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
+
+	c.Next()
+}
+
+func (s StoredAuth) CheckAuthenticatedOwner(c *gin.Context) {
+	t := c.GetHeader("Authorization")
+
+	token := strings.Replace(t, "Bearer ", "", 1)
+	if "" == token {
+		c.AbortWithError(http.StatusBadRequest, errors.New("empty token"))
+		return
+	}
+
+	id := c.Param("id")
+	err := s.authorizer.FindUser(id, token)
+	if err != nil {
+		c.AbortWithError(http.StatusNotFound, err)
 		return
 	}
 

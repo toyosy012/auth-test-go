@@ -41,7 +41,6 @@ func main() {
 
 	router := gin.Default()
 	router.GET("/users/:id", userAccountController.Get)
-	router.GET("/users", userAccountController.List)
 	router.POST("new", userAccountController.Create)
 
 	userSessionRepo := db.NewUserSessionRepo(*dbClient)
@@ -51,10 +50,11 @@ func main() {
 	{
 		v0.POST("/login", storedAuth.Login)
 
-		storedAuthRouter := v0.Group("/users").Use(storedAuth.CheckAuthentication)
+		v0usersRouter := v0.Group("/users")
 		{
-			storedAuthRouter.PATCH(":id", userAccountController.Update)
-			storedAuthRouter.DELETE(":id", userAccountController.Delete)
+			v0usersRouter.Use(storedAuth.CheckAuthentication).GET("/users", userAccountController.List)
+			v0usersRouter.Use(storedAuth.CheckAuthenticatedOwner).PATCH(":id", userAccountController.Update)
+			v0usersRouter.Use(storedAuth.CheckAuthenticatedOwner).DELETE(":id", userAccountController.Delete)
 		}
 	}
 

@@ -50,8 +50,28 @@ func (r UserSessionRepository) Register(session models.Session) (string, error) 
 	return sess.Token, nil
 }
 
-func (r UserSessionRepository) Verify(string) error {
+func (r UserSessionRepository) Verify(token string) error {
+	var sess UserSession
+	result := r.client.
+		Where("token = ? AND ? < expired_at", token, time.Now()).
+		First(&sess)
+	if result.Error != nil {
+		return result.Error
+	}
+
 	return nil
+}
+
+func (r UserSessionRepository) FindUser(token string) (string, error) {
+	var sess UserSession
+	result := r.client.
+		Where("token = ? AND ? < expired_at", token, time.Now()).
+		First(&sess)
+	if result.Error != nil {
+		return "", result.Error
+	}
+
+	return sess.Owner, nil
 }
 
 func (r UserSessionRepository) Delete(string) error {
