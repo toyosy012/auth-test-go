@@ -65,14 +65,14 @@ func (s JWTAuth) CheckAuthentication(c *gin.Context) {
 	c.Next()
 }
 
-func NewStoredAuth(s services.StoredSecurity) StoredAuth {
+func NewStoredAuth(s services.StoredAuthorizer) StoredAuth {
 	return StoredAuth{
 		authorizer: s,
 	}
 }
 
 type StoredAuth struct {
-	authorizer services.StoredSecurity
+	authorizer services.StoredAuthorizer
 }
 
 func (s StoredAuth) Login(c *gin.Context) {

@@ -40,14 +40,16 @@ func main() {
 	router.GET("/users", userAccountController.List)
 	router.POST("new", userAccountController.Create)
 
+	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo)
+	storedAuth := controller.NewStoredAuth(storedAuthSvc)
 	v0 := router.Group("/v0")
 	{
-		v0.POST("/login", jwtAuth.Login)
+		v0.POST("/login", storedAuth.Login)
 
-		authRouter := v0.Group("/users").Use(jwtAuth.CheckAuthentication)
+		storedAuthRouter := v0.Group("/users").Use(storedAuth.CheckAuthentication)
 		{
-			authRouter.PATCH(":id", userAccountController.Update)
-			authRouter.DELETE(":id", userAccountController.Delete)
+			storedAuthRouter.PATCH(":id", userAccountController.Update)
+			storedAuthRouter.DELETE(":id", userAccountController.Delete)
 		}
 	}
 
