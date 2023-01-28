@@ -1,8 +1,6 @@
 package services
 
 import (
-	"time"
-
 	"auth-test/models"
 )
 
@@ -23,7 +21,7 @@ type Authorizer struct {
 	tokenAuthorizer models.TokenAuthorizer
 }
 
-func (a Authorizer) Sign(email, password string, now time.Time) (string, error) {
+func (a Authorizer) Sign(email, password string) (string, error) {
 	account, err := a.userAccountRepo.FindByEmail(email)
 	if err != nil {
 		return "", err
@@ -34,7 +32,7 @@ func (a Authorizer) Sign(email, password string, now time.Time) (string, error) 
 		return "", err
 	}
 
-	token, err := a.tokenAuthorizer.Sign(*account, now)
+	token, err := a.tokenAuthorizer.Sign(*account)
 	if err != nil {
 		return "", err
 	}
@@ -42,8 +40,8 @@ func (a Authorizer) Sign(email, password string, now time.Time) (string, error) 
 	return token, nil
 }
 
-func (a Authorizer) Verify(token string, now time.Time) error {
-	return a.tokenAuthorizer.Verify(token, now)
+func (a Authorizer) Verify(token string) error {
+	return a.tokenAuthorizer.Verify(token)
 }
 
 type logout interface {
