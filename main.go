@@ -21,8 +21,12 @@ func main() {
 		log.Fatalf("環境変数の取得に失敗 : %s\n", err.Error())
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", env.User, env.Password, env.Host, env.Port, env.Name)
-	userAccountRepo, err := db.NewUserAccountRepositoryImpl(dsn)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=UTC", env.User, env.Password, env.Host, env.Port, env.Name)
+	dbClient, err := db.NewClient(dsn)
+	if err != nil {
+		log.Fatalf("データベースクライアントの生成に失敗 : %s\n", err.Error())
+	}
+	userAccountRepo, err := db.NewUserAccountRepositoryImpl(*dbClient)
 	userAccountSvc := services.UserAccount{
 		Repo: userAccountRepo,
 	}
@@ -37,19 +41,26 @@ func main() {
 
 	router := gin.Default()
 	router.GET("/users/:id", userAccountController.Get)
-	router.GET("/users", userAccountController.List)
-	router.POST("new", userAccountController.Create)
 
-	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo)
+	userSessionRepo := db.NewUserSessionRepo(*dbClient)
+	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo, userSessionRepo, env.AvailabilityTime)
 	storedAuth := controller.NewStoredAuth(storedAuthSvc)
 	v0 := router.Group("/v0")
 	{
 		v0.POST("/login", storedAuth.Login)
 
-		storedAuthRouter := v0.Group("/users").Use(storedAuth.CheckAuthentication)
+		v0usersRouter := v0.Group("/users")
 		{
-			storedAuthRouter.PATCH(":id", userAccountController.Update)
-			storedAuthRouter.DELETE(":id", userAccountController.Delete)
+			v0usersRouter.POST("/new", userAccountController.Create)
+			v0usersRouter.Use(storedAuth.CheckAuthentication).GET("", userAccountController.List)
+			authedOwnerRouter := v0usersRouter.Use(storedAuth.CheckAuthenticatedOwner)
+			{
+				authedOwnerRouter.PATCH("/:id", userAccountController.Update)
+				authedOwnerRouter.Use(storedAuth.CheckAuthenticatedOwner).
+					DELETE("/:id", userAccountController.Delete)
+				authedOwnerRouter.Use(storedAuth.CheckAuthenticatedOwner).
+					DELETE("/logout/:id", storedAuth.Logout)
+			}
 		}
 	}
 

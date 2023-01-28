@@ -30,6 +30,11 @@ func main() {
 		log.Fatalf("DBへの接続に失敗。: %s \n", err.Error())
 	}
 
+	err = mysqlDB.AutoMigrate(&db.UserSession{})
+	if err != nil {
+		log.Fatalf("テーブルのマイグレーションに失敗。: %s \n", err.Error())
+	}
+
 	err = mysqlDB.AutoMigrate(&db.UserAccount{})
 	if err != nil {
 		log.Fatalf("テーブルのマイグレーションに失敗。: %s \n", err.Error())
