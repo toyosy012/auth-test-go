@@ -1,6 +1,8 @@
 package services
 
 import (
+	"errors"
+	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -8,24 +10,24 @@ import (
 	"auth-test/models"
 )
 
-type Login interface {
+type Authorizer interface {
 	Sign(string, string) (string, error)
 	Verify(string) error
 }
 
-func NewAuthorizer(userAccountRepo models.UserAccountRepository, authorizer models.Authorizer) Authorizer {
-	return Authorizer{
+func NewAuthorizer(userAccountRepo models.UserAccountRepository, authorizer models.Authorizer) Authorization {
+	return Authorization{
 		userAccountRepo: userAccountRepo,
 		authorizer:      authorizer,
 	}
 }
 
-type Authorizer struct {
+type Authorization struct {
 	userAccountRepo models.UserAccountRepository
 	authorizer      models.Authorizer
 }
 
-func (a Authorizer) Sign(email, password string) (string, error) {
+func (a Authorization) Sign(email, password string) (string, error) {
 	account, err := a.userAccountRepo.FindByEmail(email)
 	if err != nil {
 		return "", err
@@ -44,7 +46,7 @@ func (a Authorizer) Sign(email, password string) (string, error) {
 	return token, nil
 }
 
-func (a Authorizer) Verify(token string) error {
+func (a Authorization) Verify(token string) error {
 	return a.authorizer.Verify(token)
 }
 
