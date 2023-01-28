@@ -30,8 +30,8 @@ func main() {
 		UserAccountService: userAccountSvc,
 	}
 
-	authentication := auth.NewTokenAuthentication(env.EncryptSecret, env.AvailabilityTime)
-	authSvc := services.NewAuthorizer(userAccountRepo, authentication)
+	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret, env.AvailabilityTime)
+	authSvc := services.NewAuthorizer(userAccountRepo, tokenAuth)
 
 	jwtAuth := controller.NewJWTAuth(authSvc)
 

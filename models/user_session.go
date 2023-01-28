@@ -1,11 +1,7 @@
 package models
 
-type TokenAuthorizer interface {
-	Sign(UserAccount) (string, error)
-	Verify(string) error
-}
-
 type UserSessionAccessor interface {
-	TokenAuthorizer
+	Register(string, string) (string, error)
+	Verify(string) error
 	Delete(string) error
 }

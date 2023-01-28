@@ -9,16 +9,16 @@ type Login interface {
 	Verify(string) error
 }
 
-func NewAuthorizer(userAccountRepo models.UserAccountRepository, tokenAuthorizer models.TokenAuthorizer) Authorizer {
+func NewAuthorizer(userAccountRepo models.UserAccountRepository, authorizer models.Authorizer) Authorizer {
 	return Authorizer{
 		userAccountRepo: userAccountRepo,
-		tokenAuthorizer: tokenAuthorizer,
+		authorizer:      authorizer,
 	}
 }
 
 type Authorizer struct {
 	userAccountRepo models.UserAccountRepository
-	tokenAuthorizer models.TokenAuthorizer
+	authorizer      models.Authorizer
 }
 
 func (a Authorizer) Sign(email, password string) (string, error) {
@@ -32,7 +32,7 @@ func (a Authorizer) Sign(email, password string) (string, error) {
 		return "", err
 	}
 
-	token, err := a.tokenAuthorizer.Sign(*account)
+	token, err := a.authorizer.Sign(*account)
 	if err != nil {
 		return "", err
 	}
@@ -41,7 +41,7 @@ func (a Authorizer) Sign(email, password string) (string, error) {
 }
 
 func (a Authorizer) Verify(token string) error {
-	return a.tokenAuthorizer.Verify(token)
+	return a.authorizer.Verify(token)
 }
 
 type logout interface {
@@ -76,7 +76,7 @@ func (a StoredAuthorization) Sign(email, password string) (string, error) {
 		return "", err
 	}
 
-	return a.userSessionRepo.Sign(*account)
+	return a.userSessionRepo.Register(email, password)
 }
 
 func (a StoredAuthorization) Verify(token string) error {
