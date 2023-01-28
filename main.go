@@ -21,8 +21,12 @@ func main() {
 		log.Fatalf("環境変数の取得に失敗 : %s\n", err.Error())
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", env.User, env.Password, env.Host, env.Port, env.Name)
-	userAccountRepo, err := db.NewUserAccountRepositoryImpl(dsn)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=UTC", env.User, env.Password, env.Host, env.Port, env.Name)
+	dbClient, err := db.NewClient(dsn)
+	if err != nil {
+		log.Fatalf("データベースクライアントの生成に失敗 : %s\n", err.Error())
+	}
+	userAccountRepo, err := db.NewUserAccountRepositoryImpl(*dbClient)
 	userAccountSvc := services.UserAccount{
 		Repo: userAccountRepo,
 	}
@@ -30,21 +34,45 @@ func main() {
 		UserAccountService: userAccountSvc,
 	}
 
-	authentication := auth.NewTokenAuthentication(env.EncryptSecret)
-	authSvc := services.NewAuthorizer(userAccountRepo, authentication)
+	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret, env.AvailabilityTime)
+	authSvc := services.NewAuthorizer(userAccountRepo, tokenAuth)
 
-	loginController := controller.NewLogin(authSvc)
+	jwtAuth := controller.NewJWTAuth(authSvc)
 
 	router := gin.Default()
-	router.POST("/login", loginController.Login)
 	router.GET("/users/:id", userAccountController.Get)
-	router.GET("/users", userAccountController.List)
 
-	authRouter := router.Group("/users").Use(loginController.CheckAuthentication)
+	userSessionRepo := db.NewUserSessionRepo(*dbClient)
+	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo, userSessionRepo, env.AvailabilityTime)
+	storedAuth := controller.NewStoredAuth(storedAuthSvc)
+	v0 := router.Group("/v0")
 	{
-		authRouter.POST("new", userAccountController.Create)
-		authRouter.PATCH(":id", userAccountController.Update)
-		authRouter.DELETE(":id", userAccountController.Delete)
+		v0.POST("/login", storedAuth.Login)
+
+		v0usersRouter := v0.Group("/users")
+		{
+			v0usersRouter.POST("/new", userAccountController.Create)
+			v0usersRouter.Use(storedAuth.CheckAuthentication).GET("", userAccountController.List)
+			authedOwnerRouter := v0usersRouter.Use(storedAuth.CheckAuthenticatedOwner)
+			{
+				authedOwnerRouter.PATCH("/:id", userAccountController.Update)
+				authedOwnerRouter.Use(storedAuth.CheckAuthenticatedOwner).
+					DELETE("/:id", userAccountController.Delete)
+				authedOwnerRouter.Use(storedAuth.CheckAuthenticatedOwner).
+					DELETE("/logout/:id", storedAuth.Logout)
+			}
+		}
+	}
+
+	v1 := router.Group("/v1")
+	{
+		v1.POST("/login", jwtAuth.Login)
+
+		authRouter := v1.Group("/users").Use(jwtAuth.CheckAuthentication)
+		{
+			authRouter.PATCH(":id", userAccountController.Update)
+			authRouter.DELETE(":id", userAccountController.Delete)
+		}
 	}
 	router.Run("localhost:8080")
 }

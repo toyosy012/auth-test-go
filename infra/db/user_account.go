@@ -1,10 +1,7 @@
 package db
 
 import (
-	"time"
-
 	"github.com/google/uuid"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
 	"auth-test/models"
@@ -29,29 +26,12 @@ func NewUserAccount(email, name, passwordHash string) *UserAccount {
 }
 
 type UserAccountRepositoryImpl struct {
-	mysql *gorm.DB
+	mysql gorm.DB
 }
 
-func NewUserAccountRepositoryImpl(dsn string) (*UserAccountRepositoryImpl, error) {
-	mysqlClient, err := gorm.Open(
-		mysql.Open(dsn),
-		&gorm.Config{},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	db, err := mysqlClient.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	db.SetMaxOpenConns(200)
-	db.SetMaxIdleConns(50)
-	db.SetConnMaxLifetime(120 * time.Second)
-
+func NewUserAccountRepositoryImpl(client gorm.DB) (*UserAccountRepositoryImpl, error) {
 	return &UserAccountRepositoryImpl{
-		mysql: mysqlClient,
+		mysql: client,
 	}, nil
 }
 
