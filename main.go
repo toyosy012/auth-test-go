@@ -40,7 +40,8 @@ func main() {
 	router.GET("/users", userAccountController.List)
 	router.POST("new", userAccountController.Create)
 
-	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo)
+	userSessionRepo := db.NewUserSessionRepo()
+	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo, userSessionRepo)
 	storedAuth := controller.NewStoredAuth(storedAuthSvc)
 	v0 := router.Group("/v0")
 	{
