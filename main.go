@@ -33,18 +33,33 @@ func main() {
 	authentication := auth.NewTokenAuthentication(env.EncryptSecret)
 	authSvc := services.NewAuthorizer(userAccountRepo, authentication)
 
-	loginController := controller.NewLogin(authSvc)
+	jwtAuth := controller.NewJWTAuth(authSvc)
 
 	router := gin.Default()
-	router.POST("/login", loginController.Login)
 	router.GET("/users/:id", userAccountController.Get)
 	router.GET("/users", userAccountController.List)
+	router.POST("new", userAccountController.Create)
 
-	authRouter := router.Group("/users").Use(loginController.CheckAuthentication)
+	v0 := router.Group("/v0")
 	{
-		authRouter.POST("new", userAccountController.Create)
-		authRouter.PATCH(":id", userAccountController.Update)
-		authRouter.DELETE(":id", userAccountController.Delete)
+		v0.POST("/login", jwtAuth.Login)
+
+		authRouter := v0.Group("/users").Use(jwtAuth.CheckAuthentication)
+		{
+			authRouter.PATCH(":id", userAccountController.Update)
+			authRouter.DELETE(":id", userAccountController.Delete)
+		}
+	}
+
+	v1 := router.Group("/v1")
+	{
+		v1.POST("/login", jwtAuth.Login)
+
+		authRouter := v1.Group("/users").Use(jwtAuth.CheckAuthentication)
+		{
+			authRouter.PATCH(":id", userAccountController.Update)
+			authRouter.DELETE(":id", userAccountController.Delete)
+		}
 	}
 	router.Run("localhost:8080")
 }
