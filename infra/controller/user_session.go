@@ -30,13 +30,13 @@ func (s JWTAuth) Login(c *gin.Context) {
 	var form loginForm
 	err := c.Bind(&form)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		c.AbortWithError(http.StatusForbidden, err)
 		return
 	}
 
 	token, err := s.authorizer.Sign(form.Email, form.Password)
 	if err != nil {
-		c.JSON(http.StatusForbidden, err.Error())
+		c.AbortWithError(http.StatusForbidden, err)
 		return
 	}
 
@@ -50,15 +50,13 @@ func (s JWTAuth) CheckAuthentication(c *gin.Context) {
 
 	token := strings.Replace(t, "Bearer ", "", 1)
 	if "" == token {
-		c.AbortWithStatus(http.StatusBadRequest)
-		c.Writer.Write([]byte("empty token"))
+		c.AbortWithError(http.StatusBadRequest, errors.New("empty token"))
 		return
 	}
 
 	err := s.authorizer.Verify(token)
 	if err != nil {
-		c.AbortWithStatus(http.StatusForbidden)
-		c.Writer.Write([]byte(err.Error()))
+		c.AbortWithError(http.StatusForbidden, err)
 		return
 	}
 
