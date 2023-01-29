@@ -21,6 +21,6 @@ func NewSession(owner, token string, expiredAt time.Time) Session {
 type UserSessionAccessor interface {
 	Register(Session) (string, error)
 	Verify(string) error
-	FindUser(string) (string, error)
+	FindOwner(string) (string, error)
 	Delete(string, string) error
 }

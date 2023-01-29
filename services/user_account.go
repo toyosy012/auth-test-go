@@ -3,7 +3,7 @@ package services
 import "auth-test/models"
 
 type UserAccount struct {
-	Repo models.UserAccountRepository
+	Repo models.UserAccountAccessor
 }
 
 func (a UserAccount) Find(id string) (*models.UserAccount, error) {
