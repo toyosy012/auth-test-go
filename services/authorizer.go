@@ -15,7 +15,7 @@ type Authorizer interface {
 	Verify(string) error
 }
 
-func NewAuthorizer(userAccountRepo models.UserAccountRepository, authorizer models.Authorizer) Authorization {
+func NewAuthorizer(userAccountRepo models.UserAccountAccessor, authorizer models.Authorizer) Authorization {
 	return Authorization{
 		userAccountRepo: userAccountRepo,
 		authorizer:      authorizer,
@@ -23,7 +23,7 @@ func NewAuthorizer(userAccountRepo models.UserAccountRepository, authorizer mode
 }
 
 type Authorization struct {
-	userAccountRepo models.UserAccountRepository
+	userAccountRepo models.UserAccountAccessor
 	authorizer      models.Authorizer
 }
 
@@ -58,7 +58,7 @@ type StoredAuthorizer interface {
 }
 
 func NewStoredAuthorization(
-	a models.UserAccountRepository,
+	a models.UserAccountAccessor,
 	s models.UserSessionAccessor,
 	availabilityTime time.Duration,
 ) StoredAuthorization {
@@ -70,7 +70,7 @@ func NewStoredAuthorization(
 }
 
 type StoredAuthorization struct {
-	userAccountRepo  models.UserAccountRepository
+	userAccountRepo  models.UserAccountAccessor
 	userSessionRepo  models.UserSessionAccessor
 	availabilityTime time.Duration
 }

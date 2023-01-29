@@ -26,7 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("データベースクライアントの生成に失敗 : %s\n", err.Error())
 	}
-	userAccountRepo, err := db.NewUserAccountRepositoryImpl(*dbClient)
+	userAccountRepo, err := db.NewUserAccountRepository(*dbClient)
 	userAccountSvc := services.UserAccount{
 		Repo: userAccountRepo,
 	}

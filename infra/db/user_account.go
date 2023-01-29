@@ -25,19 +25,19 @@ func NewUserAccount(email, name, passwordHash string) *UserAccount {
 	}
 }
 
-type UserAccountRepositoryImpl struct {
+type UserAccountRepository struct {
 	mysql gorm.DB
 }
 
-func NewUserAccountRepositoryImpl(client gorm.DB) (*UserAccountRepositoryImpl, error) {
-	return &UserAccountRepositoryImpl{
+func NewUserAccountRepository(client gorm.DB) (*UserAccountRepository, error) {
+	return &UserAccountRepository{
 		mysql: client,
 	}, nil
 }
 
-func (i *UserAccountRepositoryImpl) Find(id string) (*models.UserAccount, error) {
+func (r *UserAccountRepository) Find(id string) (*models.UserAccount, error) {
 	var account UserAccount
-	result := i.mysql.Where("id=?", id).First(&account)
+	result := r.mysql.Where("id=?", id).First(&account)
 	if err := result.Error; err != nil {
 		return nil, err
 	}
@@ -50,9 +50,9 @@ func (i *UserAccountRepositoryImpl) Find(id string) (*models.UserAccount, error)
 	}, nil
 }
 
-func (i *UserAccountRepositoryImpl) FindByEmail(email string) (*models.UserAccount, error) {
+func (r *UserAccountRepository) FindByEmail(email string) (*models.UserAccount, error) {
 	var account UserAccount
-	result := i.mysql.Where("email=?", email).First(&account)
+	result := r.mysql.Where("email=?", email).First(&account)
 	if err := result.Error; err != nil {
 		return nil, err
 	}
@@ -65,9 +65,9 @@ func (i *UserAccountRepositoryImpl) FindByEmail(email string) (*models.UserAccou
 	}, nil
 }
 
-func (i *UserAccountRepositoryImpl) List() ([]models.UserAccount, error) {
+func (r *UserAccountRepository) List() ([]models.UserAccount, error) {
 	var accounts []UserAccount
-	result := i.mysql.Find(&accounts)
+	result := r.mysql.Find(&accounts)
 	if err := result.Error; err != nil {
 		return nil, err
 	}
@@ -85,20 +85,20 @@ func (i *UserAccountRepositoryImpl) List() ([]models.UserAccount, error) {
 	return results, nil
 }
 
-func (i *UserAccountRepositoryImpl) Insert(email, name, password string) (*models.UserAccount, error) {
+func (r *UserAccountRepository) Insert(email, name, password string) (*models.UserAccount, error) {
 	encryptedPass, err := models.NewEncryptedPassword(password)
 	if err != nil {
 		return nil, err
 	}
 	account := NewUserAccount(email, name, encryptedPass.Hash)
 
-	result := i.mysql.Create(account)
+	result := r.mysql.Create(account)
 	if err := result.Error; err != nil {
 		return nil, err
 	}
 
 	var a UserAccount
-	result = i.mysql.Where("email = ?", account.Email).Find(&a)
+	result = r.mysql.Where("email = ?", account.Email).Find(&a)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -111,19 +111,19 @@ func (i *UserAccountRepositoryImpl) Insert(email, name, password string) (*model
 	}, nil
 }
 
-func (i *UserAccountRepositoryImpl) Update(account models.UserAccount) (*models.UserAccount, error) {
+func (r *UserAccountRepository) Update(account models.UserAccount) (*models.UserAccount, error) {
 	encryptedPass, err := models.NewEncryptedPassword(account.Password)
 	if err != nil {
 		return nil, err
 	}
 	newAccount := UserAccount{Email: account.Email, Name: account.Name, Hash: encryptedPass.Hash}
-	result := i.mysql.Table("user_accounts").Where("id=?", account.ID).UpdateColumns(newAccount)
+	result := r.mysql.Table("user_accounts").Where("id=?", account.ID).UpdateColumns(newAccount)
 	if err := result.Error; err != nil {
 		return nil, err
 	}
 
 	var a UserAccount
-	result = i.mysql.Where("email = ?", account.Email).Find(&a)
+	result = r.mysql.Where("email = ?", account.Email).Find(&a)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -136,13 +136,13 @@ func (i *UserAccountRepositoryImpl) Update(account models.UserAccount) (*models.
 	}, nil
 }
 
-func (i *UserAccountRepositoryImpl) Delete(id string) error {
+func (r *UserAccountRepository) Delete(id string) error {
 	deletedUUID, err := uuid.Parse(id)
 	if err != nil {
 		return nil
 	}
 
 	user := models.UserAccount{}
-	result := i.mysql.Delete(&user, deletedUUID)
+	result := r.mysql.Delete(&user, deletedUUID)
 	return result.Error
 }

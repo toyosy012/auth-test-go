@@ -7,7 +7,7 @@ type UserAccount struct {
 	Password string
 }
 
-type UserAccountRepository interface {
+type UserAccountAccessor interface {
 	Find(string) (*UserAccount, error)
 	FindByEmail(string) (*UserAccount, error)
 	List() ([]UserAccount, error)
