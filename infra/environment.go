@@ -7,10 +7,10 @@ type Environment struct {
 	UserPassword     string        `envconfig:"USER_PASSWORD" required:"true"`
 	UserName         string        `envconfig:"USER_NAME" required:"true"`
 	User             string        `default:"root"`
-	Password         string        `default:"mysql"`
+	Password         string        `required:"true"`
 	Host             string        `default:"0.0.0.0"`
 	Port             int           `default:"3306"`
 	Name             string        `default:"auth_test"`
-	EncryptSecret    string        `default:"secret"`
+	EncryptSecret    string        `envconfig:"ENCRYPT_SECRET" required:"true"`
 	AvailabilityTime time.Duration `default:"1h"`
 }
