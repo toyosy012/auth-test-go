@@ -1,0 +1,44 @@
+version: "3"
+services:
+  database:
+    networks:
+      auth_test_nw:
+    image: mysql:8.0
+    container_name: auth-test-db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PASSWORD:-invalid}
+      MYSQL_DATABASE: auth_test
+    cap_add:
+      - SYS_NICE
+  auth-test:
+    networks:
+      auth_test_nw:
+    container_name: auth-test
+    image: auth-test-go:latest
+    command:
+      # depends_onが機能すれば削除可能
+      - "./wait-for-it.sh"
+      - './main'
+    ports:
+      - '8080:8080'
+    environment:
+      EMAIL: ${EMAIL:-invalid}
+      USER_PASSWORD: ${USER_PASSWORD:-invalid}
+      USER_NAME: ${USER_NAME:-invalid}
+      ENCRYPT_SECRET: ${EncryptSecret:-invalid}
+      HOST: auth-test-db
+      PASSWORD: ${PASSWORD:-invalid}
+      GIN_MODE: release
+     # databaseが起動してヘルスチェックするまで待機する設定なのだが機能しないので、commandで待機スクリプトを仕掛ける
+#    depends_on:
+#      database:
+#        condition: service_healthy
+networks:
+  auth_test_nw:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.19.1.0/24
