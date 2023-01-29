@@ -100,7 +100,7 @@ func (a StoredAuthorization) Verify(token string) error {
 }
 
 func (a StoredAuthorization) FindUser(id, token string) error {
-	owner, err := a.userSessionRepo.FindUser(token)
+	owner, err := a.userSessionRepo.FindOwner(token)
 	if err != nil {
 		return err
 	}

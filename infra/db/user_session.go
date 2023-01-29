@@ -62,7 +62,7 @@ func (r UserSessionRepository) Verify(token string) error {
 	return nil
 }
 
-func (r UserSessionRepository) FindUser(token string) (string, error) {
+func (r UserSessionRepository) FindOwner(token string) (string, error) {
 	var sess UserSession
 	result := r.client.
 		Where("token = ? AND ? < expired_at", token, time.Now()).
