@@ -13,7 +13,7 @@ func newErrorResponse(message string, detail string) errorResponse {
 
 type errorResponse struct {
 	Message string `json:"message"`
-	Detail  string `json:"detail"`
+	Detail  string `json:"detail,omitempty"`
 }
 
 func (r errorResponse) Error() string {
