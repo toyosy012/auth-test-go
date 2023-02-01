@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/kelseyhightower/envconfig"
 
 	"auth-test/infra"
@@ -20,6 +21,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("環境変数の取得に失敗 : %s\n", err.Error())
 	}
+	validate := validator.New()
+	if err != nil {
+		log.Fatalf("環境変数の取得に失敗 : %s\n", err.Error())
+	}
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=UTC", env.User, env.Password, env.Host, env.Port, env.Name)
 	dbClient, err := db.NewClient(dsn)
@@ -30,9 +35,7 @@ func main() {
 	userAccountSvc := services.UserAccount{
 		Repo: userAccountRepo,
 	}
-	userAccountController := controller.UserAccountHandler{
-		UserAccountService: userAccountSvc,
-	}
+	userAccountController := controller.NewUserAccountHandler(userAccountSvc, *validate)
 
 	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret, env.AvailabilityTime)
 	authSvc := services.NewAuthorizer(userAccountRepo, tokenAuth)

@@ -5,13 +5,26 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 
 	"auth-test/models"
 	"auth-test/services"
 )
 
+func NewUserAccountHandler(svc services.UserAccount, validate validator.Validate) UserAccountHandler {
+	return UserAccountHandler{
+		service:  svc,
+		validate: validate,
+	}
+}
+
 type UserAccountHandler struct {
-	UserAccountService services.UserAccount
+	service  services.UserAccount
+	validate validator.Validate
+}
+
+type UserPathParams struct {
+	ID string `uri:"id" binding:"required,uuid"`
 }
 
 type InputUserAccount struct {
@@ -21,8 +34,14 @@ type InputUserAccount struct {
 }
 
 func (h UserAccountHandler) Get(c *gin.Context) {
-	accountID := c.Param("id")
-	userAccount, err := h.UserAccountService.Find(accountID)
+	var params UserPathParams
+	if err := c.BindUri(&params); err != nil {
+		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
+		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		return
+	}
+
+	userAccount, err := h.service.Find(params.ID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
@@ -32,9 +51,10 @@ func (h UserAccountHandler) Get(c *gin.Context) {
 }
 
 func (h UserAccountHandler) List(c *gin.Context) {
-	accounts, err := h.UserAccountService.List()
+	accounts, err := h.service.List()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
+		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
 		return
 	}
 
@@ -49,7 +69,7 @@ func (h *UserAccountHandler) Create(c *gin.Context) {
 		return
 	}
 
-	result, err := h.UserAccountService.Create(models.UserAccount{
+	result, err := h.service.Create(models.UserAccount{
 		Email:    account.Email,
 		Name:     account.Name,
 		Password: account.Password,
@@ -65,7 +85,12 @@ func (h *UserAccountHandler) Create(c *gin.Context) {
 }
 
 func (h *UserAccountHandler) Update(c *gin.Context) {
-	id := c.Param("id")
+	var params UserPathParams
+	if err := c.BindUri(&params); err != nil {
+		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
+		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		return
+	}
 	var account InputUserAccount
 	err := c.BindJSON(&account)
 	if err != nil {
@@ -73,8 +98,8 @@ func (h *UserAccountHandler) Update(c *gin.Context) {
 		return
 	}
 
-	result, err := h.UserAccountService.Update(models.UserAccount{
-		ID:       id,
+	result, err := h.service.Update(models.UserAccount{
+		ID:       params.ID,
 		Email:    account.Email,
 		Name:     account.Name,
 		Password: account.Password,
@@ -89,8 +114,13 @@ func (h *UserAccountHandler) Update(c *gin.Context) {
 }
 
 func (h UserAccountHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
-	err := h.UserAccountService.Delete(id)
+	var params UserPathParams
+	if err := c.BindUri(&params); err != nil {
+		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
+		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		return
+	}
+	err := h.service.Delete(params.ID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
