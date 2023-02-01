@@ -28,9 +28,9 @@ type UserPathParams struct {
 }
 
 type InputUserAccount struct {
-	Email    string `json:"email" required:"true"`
-	Name     string `json:"name" required:"true"`
-	Password string `json:"password" required:"true"`
+	Email    string `json:"email" binding:"required,email"`
+	Name     string `json:"name" binding:"required"`
+	Password string `json:"password" binding:"required,nist_sp_800_63"`
 }
 
 func (h UserAccountHandler) Get(c *gin.Context) {
@@ -65,7 +65,8 @@ func (h *UserAccountHandler) Create(c *gin.Context) {
 	var account InputUserAccount
 	err := c.Bind(&account)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
+		c.JSON(http.StatusBadRequest, accountBodyParam.getResponse())
 		return
 	}
 
@@ -94,7 +95,8 @@ func (h *UserAccountHandler) Update(c *gin.Context) {
 	var account InputUserAccount
 	err := c.BindJSON(&account)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
+		c.JSON(http.StatusBadRequest, accountBodyParam.getResponse())
 		return
 	}
 
