@@ -5,13 +5,22 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 
 	"auth-test/models"
 	"auth-test/services"
 )
 
+func NewUserAccountHandler(svc services.UserAccount, validate validator.Validate) UserAccountHandler {
+	return UserAccountHandler{
+		service:  svc,
+		validate: validate,
+	}
+}
+
 type UserAccountHandler struct {
-	UserAccountService services.UserAccount
+	service  services.UserAccount
+	validate validator.Validate
 }
 
 type InputUserAccount struct {
