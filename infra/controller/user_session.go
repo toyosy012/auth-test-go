@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 
 	"auth-test/services"
 )
@@ -18,8 +19,8 @@ func NewJWTAuth(service services.Authorizer) JWTAuth {
 }
 
 type loginForm struct {
-	Email    string `json:"email" required:"true"`
-	Password string `json:"password" required:"true"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,nist_sp_800_63"`
 }
 
 type JWTAuth struct {
@@ -30,7 +31,8 @@ func (s JWTAuth) Login(c *gin.Context) {
 	var form loginForm
 	err := c.Bind(&form)
 	if err != nil {
-		c.AbortWithError(http.StatusForbidden, err)
+		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
+		c.JSON(http.StatusBadRequest, accountBodyParam.getResponse())
 		return
 	}
 
@@ -77,7 +79,8 @@ func (s StoredAuth) Login(c *gin.Context) {
 	var form loginForm
 	err := c.Bind(&form)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
+		c.JSON(http.StatusBadRequest, accountBodyParam.getResponse())
 		return
 	}
 
@@ -119,8 +122,14 @@ func (s StoredAuth) CheckAuthenticatedOwner(c *gin.Context) {
 		return
 	}
 
-	id := c.Param("id")
-	err := s.authorizer.FindUser(id, token)
+	var params UserPathParams
+	if err := c.BindUri(&params); err != nil {
+		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
+		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		return
+	}
+
+	err := s.authorizer.FindUser(params.ID, token)
 	if err != nil {
 		c.AbortWithError(http.StatusNotFound, err)
 		return
@@ -132,9 +141,15 @@ func (s StoredAuth) CheckAuthenticatedOwner(c *gin.Context) {
 func (s StoredAuth) Logout(c *gin.Context) {
 	t := c.GetHeader("Authorization")
 	token := strings.Replace(t, "Bearer ", "", 1)
-	owner := c.Param("id")
-	if err := s.authorizer.SignOut(owner, token); err != nil {
-		c.AbortWithError(http.StatusNotFound, err)
+	var params UserPathParams
+	if err := c.BindUri(&params); err != nil {
+		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
+		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		return
+	}
+	if err := s.authorizer.SignOut(params.ID, token); err != nil {
+		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
+		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
 		return
 	}
 	return
