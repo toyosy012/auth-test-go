@@ -50,45 +50,34 @@ func main() {
 
 	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret, env.AvailabilityTime)
 	authSvc := services.NewAuthorizer(userAccountRepo, tokenAuth)
-
 	jwtAuth := controller.NewJWTAuth(authSvc)
 
-	router := gin.Default()
-	usersRouter := router.Group("users")
-	{
-		usersRouter.GET(":id", userAccountController.Get)
-		usersRouter.POST("new", userAccountController.Create)
-	}
 	userSessionRepo := db.NewUserSessionRepo(*dbClient)
 	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo, userSessionRepo, env.AvailabilityTime)
 	storedAuth := controller.NewStoredAuth(storedAuthSvc)
-	v0 := router.Group("v0")
-	{
-		v0.POST("login", storedAuth.Login)
 
-		v0UsersRouter := v0.Group("users")
+	router := gin.Default()
+	v1 := router.Group("v1")
+	{
+		v1.POST("login", storedAuth.Login)
+		ownedRouter := v1.Group("auth/:id").Use(storedAuth.CheckAuthenticatedOwner)
 		{
-			v0UsersRouter.Use(storedAuth.CheckAuthentication).GET("", userAccountController.List)
-			authedOwnerRouter := v0UsersRouter.Use(storedAuth.CheckAuthenticatedOwner)
+			ownedRouter.POST("refresh", jwtAuth.Login)
+			ownedRouter.DELETE("logout", storedAuth.Logout)
+		}
+
+		usersRouter := v1.Group("users")
+		{
+			usersRouter.POST("new", userAccountController.Create)
+			authRouter := usersRouter.Use(jwtAuth.CheckAuthentication)
 			{
-				authedOwnerRouter.PATCH(":id", userAccountController.Update)
-				authedOwnerRouter.Use(storedAuth.CheckAuthenticatedOwner).
-					DELETE(":id", userAccountController.Delete)
-				authedOwnerRouter.Use(storedAuth.CheckAuthenticatedOwner).
-					DELETE("logout/:id", storedAuth.Logout)
+				authRouter.GET(":id", userAccountController.Get)
+				authRouter.GET("", userAccountController.List)
+				authRouter.PATCH(":id", userAccountController.Update)
+				authRouter.DELETE(":id", userAccountController.Delete)
 			}
 		}
 	}
 
-	v1 := router.Group("v1")
-	{
-		v1.POST("login", jwtAuth.Login)
-
-		authRouter := v1.Group("users").Use(jwtAuth.CheckAuthentication)
-		{
-			authRouter.PATCH(":id", userAccountController.Update)
-			authRouter.DELETE(":id", userAccountController.Delete)
-		}
-	}
 	router.Run("0.0.0.0:8080")
 }
