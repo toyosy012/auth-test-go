@@ -7,23 +7,27 @@ const (
 )
 
 type EncryptedPassword struct {
-	Hash string
+	hash string
 }
 
-func NewEncryptedPassword(password string) (*EncryptedPassword, error) {
+func NewEncryptedPassword(hash string) EncryptedPassword { return EncryptedPassword{hash: hash} }
+
+func NewEncryption(password string) (*EncryptedPassword, error) {
 	hash, err := hashAndStretch(password)
 	if err != nil {
 		return nil, err
 	}
 
 	return &EncryptedPassword{
-		Hash: hash,
+		hash: hash,
 	}, nil
 }
 
 func (p EncryptedPassword) MatchWith(password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(p.Hash), []byte(password))
+	return bcrypt.CompareHashAndPassword([]byte(p.hash), []byte(password))
 }
+
+func (p EncryptedPassword) Hash() string { return p.hash }
 
 func hashAndStretch(password string) (string, error) {
 	passwd, err := bcrypt.GenerateFromPassword([]byte(password), EncryptCost)

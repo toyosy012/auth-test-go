@@ -4,6 +4,11 @@ import (
 	"time"
 )
 
+type Authorizer interface {
+	Sign(AccessTokenInput) (string, error)
+	Verify(string) error
+}
+
 func NewAccessTokenInput(accountID, email string, now, expiration time.Time) AccessTokenInput {
 	return AccessTokenInput{
 		accountID: accountID,
