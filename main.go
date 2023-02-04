@@ -37,15 +37,16 @@ func main() {
 		}
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=UTC", env.User, env.Password, env.Host, env.Port, env.Name)
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=UTC",
+		env.User, env.Password, env.Host, env.Port, env.Name,
+	)
 	dbClient, err := db.NewClient(dsn)
 	if err != nil {
 		log.Fatalf("データベースクライアントの生成に失敗 : %s\n", err.Error())
 	}
 	userAccountRepo, err := db.NewUserAccountRepository(*dbClient)
-	userAccountSvc := services.UserAccount{
-		Repo: userAccountRepo,
-	}
+	userAccountSvc := services.NewUserAccount(userAccountRepo)
 	userAccountController := controller.NewUserAccountHandler(userAccountSvc, *validate)
 
 	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret)
