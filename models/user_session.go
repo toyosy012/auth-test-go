@@ -4,19 +4,23 @@ import (
 	"time"
 )
 
-type Session struct {
-	Owner     string
-	Token     string
-	ExpiredAt time.Time
-}
-
 func NewSession(owner, token string, expiredAt time.Time) Session {
 	return Session{
-		Owner:     owner,
-		Token:     token,
-		ExpiredAt: expiredAt,
+		owner:     owner,
+		token:     token,
+		expiredAt: expiredAt,
 	}
 }
+
+type Session struct {
+	owner     string
+	token     string
+	expiredAt time.Time
+}
+
+func (s Session) Owner() string        { return s.owner }
+func (s Session) Token() string        { return s.token }
+func (s Session) ExpiredAt() time.Time { return s.expiredAt }
 
 type UserSessionAccessor interface {
 	Register(Session) (string, error)

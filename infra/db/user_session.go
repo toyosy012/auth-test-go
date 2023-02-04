@@ -8,9 +8,9 @@ import (
 	"auth-test/models"
 )
 
-type UserSession struct {
-	Owner     string    `gorm:"primaryKey;autoIncrement:false;type:varchar(36);not null"`
-	Token     string    `gorm:"primaryKey;autoIncrement:false;not null"`
+type UserSessions struct {
+	ID        string    `gorm:"type:varchar(36);primaryKey;not null"`
+	UserID    string    `gorm:"type:varchar(36);type:varchar(36);not null"`
 	ExpiredAt time.Time `gorm:"type:datetime(0);not null"`
 	CreatedAt time.Time `gorm:"type:datetime(0);not null;default:current_timestamp"`
 }
@@ -31,15 +31,19 @@ type UserSessionRepository struct {
 
 func (r UserSessionRepository) Register(session models.Session) (string, error) {
 	result := r.client.Create(
-		UserSession{Owner: session.Owner, Token: session.Token, ExpiredAt: session.ExpiredAt},
+		UserSessions{
+			UserID:    session.Owner(),
+			ID:        session.Token(),
+			ExpiredAt: session.ExpiredAt(),
+		},
 	)
 	if result.Error != nil {
 		return "", nil
 	}
 
-	var sess UserSession
+	var sess UserSessions
 	result = r.client.
-		Where("owner = ? AND token = ?", session.Owner, session.Token).
+		Where("id = ? AND user_id = ?", session.Token(), session.Owner()).
 		Limit(1).
 		Find(&sess)
 
@@ -47,11 +51,11 @@ func (r UserSessionRepository) Register(session models.Session) (string, error) 
 		return "", err
 	}
 
-	return sess.Token, nil
+	return sess.ID, nil
 }
 
 func (r UserSessionRepository) Verify(token string) error {
-	var sess UserSession
+	var sess UserSessions
 	result := r.client.
 		Where("token = ? AND ? < expired_at", token, time.Now()).
 		First(&sess)
@@ -63,19 +67,22 @@ func (r UserSessionRepository) Verify(token string) error {
 }
 
 func (r UserSessionRepository) FindOwner(token string) (string, error) {
-	var sess UserSession
+	var sess UserSessions
 	result := r.client.
-		Where("token = ? AND ? < expired_at", token, time.Now()).
+		Where("id = ? AND ? < expired_at", token, time.Now()).
 		First(&sess)
 	if err := result.Error; err != nil {
 		return "", err
 	}
 
-	return sess.Owner, nil
+	return sess.UserID, nil
 }
 
 func (r UserSessionRepository) Delete(owner, token string) error {
-	result := r.client.Delete(UserSession{Owner: owner, Token: token})
+	result := r.client.Delete(UserSessions{
+		UserID: owner,
+		ID:     token,
+	})
 	if err := result.Error; err != nil {
 		return err
 	}

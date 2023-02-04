@@ -37,58 +37,63 @@ func main() {
 		}
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=UTC", env.User, env.Password, env.Host, env.Port, env.Name)
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=UTC",
+		env.User, env.Password, env.Host, env.Port, env.Name,
+	)
 	dbClient, err := db.NewClient(dsn)
 	if err != nil {
 		log.Fatalf("データベースクライアントの生成に失敗 : %s\n", err.Error())
 	}
 	userAccountRepo, err := db.NewUserAccountRepository(*dbClient)
-	userAccountSvc := services.UserAccount{
-		Repo: userAccountRepo,
-	}
+	userAccountSvc := services.NewUserAccount(userAccountRepo)
 	userAccountController := controller.NewUserAccountHandler(userAccountSvc, *validate)
 
-	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret, env.AvailabilityTime)
-	authSvc := services.NewAuthorizer(userAccountRepo, tokenAuth)
+	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret)
+	tokenRepo := db.NewTokenRepository(*dbClient)
+	tokenAuthSvc := services.NewTokenAuthorization(
+		tokenAuth, tokenRepo, userAccountRepo,
+		env.RefreshExpiration, env.AccessExpiration,
+	)
+	tokenAuthController := controller.NewTokenHandler(tokenAuthSvc)
 
-	jwtAuth := controller.NewJWTAuth(authSvc)
+	userSessionRepo := db.NewUserSessionRepo(*dbClient)
+	userSessionSvc := services.NewSessionAuthorization(userAccountRepo, userSessionRepo, env.SessionExpiration)
+	userSessionController := controller.NewSessionAuth(userSessionSvc)
 
 	router := gin.Default()
-	usersRouter := router.Group("users")
+	v1 := router.Group("v1")
+	usersRouter := v1.Group("users")
 	{
-		usersRouter.GET(":id", userAccountController.Get)
+		usersRouter.GET("", userAccountController.List) // デバック用APIのため各認証グループ外ルーティングに設定
 		usersRouter.POST("new", userAccountController.Create)
 	}
-	userSessionRepo := db.NewUserSessionRepo(*dbClient)
-	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo, userSessionRepo, env.AvailabilityTime)
-	storedAuth := controller.NewStoredAuth(storedAuthSvc)
-	v0 := router.Group("v0")
-	{
-		v0.POST("login", storedAuth.Login)
 
-		v0UsersRouter := v0.Group("users")
+	{
+		sessionRouter := v1.Group("session")
+		sessionRouter.POST("login", userSessionController.Login)
+		sessionRouter.Use(userSessionController.CheckAuthenticatedOwner).DELETE("logout/:id", userSessionController.Logout)
 		{
-			v0UsersRouter.Use(storedAuth.CheckAuthentication).GET("", userAccountController.List)
-			authedOwnerRouter := v0UsersRouter.Use(storedAuth.CheckAuthenticatedOwner)
+			r := sessionRouter.Group("users").Use(userSessionController.CheckAuthenticatedOwner)
 			{
-				authedOwnerRouter.PATCH(":id", userAccountController.Update)
-				authedOwnerRouter.Use(storedAuth.CheckAuthenticatedOwner).
-					DELETE(":id", userAccountController.Delete)
-				authedOwnerRouter.Use(storedAuth.CheckAuthenticatedOwner).
-					DELETE("logout/:id", storedAuth.Logout)
+				r.GET(":id", userAccountController.Get)
+				r.PUT(":id", userAccountController.Update)
+				r.DELETE(":id", userAccountController.Delete)
+			}
+		}
+
+		oauthRouter := v1.Group("oauth")
+		oauthRouter.POST("claim", tokenAuthController.Claim)
+		oauthRouter.POST("refresh", tokenAuthController.Refresh)
+		{
+			r := oauthRouter.Group("users").Use(tokenAuthController.VerifyAccessToken)
+			{
+				r.GET(":id", userAccountController.Get)
+				r.PUT(":id", userAccountController.Update)
+				r.DELETE(":id", userAccountController.Delete)
 			}
 		}
 	}
 
-	v1 := router.Group("v1")
-	{
-		v1.POST("login", jwtAuth.Login)
-
-		authRouter := v1.Group("users").Use(jwtAuth.CheckAuthentication)
-		{
-			authRouter.PATCH(":id", userAccountController.Update)
-			authRouter.DELETE(":id", userAccountController.Delete)
-		}
-	}
 	router.Run("0.0.0.0:8080")
 }
