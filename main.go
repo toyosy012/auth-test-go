@@ -57,8 +57,8 @@ func main() {
 	tokenAuthController := controller.NewTokenHandler(tokenAuthSvc)
 
 	userSessionRepo := db.NewUserSessionRepo(*dbClient)
-	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo, userSessionRepo, env.AvailabilityTime)
-	storedAuth := controller.NewStoredAuth(storedAuthSvc)
+	userSessionSvc := services.NewSessionAuthorization(userAccountRepo, userSessionRepo, env.SessionExpiration)
+	userSessionController := controller.NewSessionAuth(userSessionSvc)
 
 	router := gin.Default()
 	v1 := router.Group("v1")
