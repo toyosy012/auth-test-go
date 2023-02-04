@@ -22,14 +22,14 @@ type OauthToken struct {
 	Refresh string `json:"refresh" binding:"required,uuid"`
 }
 
-func NewTokenHandler(service services.Authenticator) TokenHandler {
+func NewTokenHandler(service services.OauthToken) TokenHandler {
 	return TokenHandler{
 		authenticateSvc: service,
 	}
 }
 
 type TokenHandler struct {
-	authenticateSvc services.Authenticator
+	authenticateSvc services.OauthToken
 }
 
 func (h TokenHandler) Claim(c *gin.Context) {
