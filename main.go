@@ -48,9 +48,13 @@ func main() {
 	}
 	userAccountController := controller.NewUserAccountHandler(userAccountSvc, *validate)
 
-	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret, env.AvailabilityTime)
-	authSvc := services.NewAuthorizer(userAccountRepo, tokenAuth)
-	jwtAuth := controller.NewJWTAuth(authSvc)
+	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret)
+	tokenRepo := db.NewTokenRepository(*dbClient)
+	tokenAuthSvc := services.NewTokenAuthorization(
+		tokenAuth, tokenRepo, userAccountRepo,
+		env.RefreshExpiration, env.AccessExpiration,
+	)
+	tokenAuthController := controller.NewTokenHandler(tokenAuthSvc)
 
 	userSessionRepo := db.NewUserSessionRepo(*dbClient)
 	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo, userSessionRepo, env.AvailabilityTime)
@@ -58,23 +62,34 @@ func main() {
 
 	router := gin.Default()
 	v1 := router.Group("v1")
+	usersRouter := v1.Group("users")
 	{
-		v1.POST("login", storedAuth.Login)
-		ownedRouter := v1.Group("auth/:id").Use(storedAuth.CheckAuthenticatedOwner)
+		usersRouter.GET("", userAccountController.List) // デバック用APIのため各認証グループ外ルーティングに設定
+		usersRouter.POST("new", userAccountController.Create)
+	}
+
+	{
+		sessionRouter := v1.Group("session")
+		sessionRouter.POST("login", userSessionController.Login)
+		sessionRouter.Use(userSessionController.CheckAuthenticatedOwner).DELETE("logout/:id", userSessionController.Logout)
 		{
-			ownedRouter.POST("refresh", jwtAuth.Login)
-			ownedRouter.DELETE("logout", storedAuth.Logout)
+			r := sessionRouter.Group("users").Use(userSessionController.CheckAuthenticatedOwner)
+			{
+				r.GET(":id", userAccountController.Get)
+				r.PUT(":id", userAccountController.Update)
+				r.DELETE(":id", userAccountController.Delete)
+			}
 		}
 
-		usersRouter := v1.Group("users")
+		oauthRouter := v1.Group("oauth")
+		oauthRouter.POST("claim", tokenAuthController.Claim)
+		oauthRouter.POST("refresh", tokenAuthController.Refresh)
 		{
-			usersRouter.POST("new", userAccountController.Create)
-			authRouter := usersRouter.Use(jwtAuth.CheckAuthentication)
+			r := oauthRouter.Group("users").Use(tokenAuthController.VerifyAccessToken)
 			{
-				authRouter.GET(":id", userAccountController.Get)
-				authRouter.GET("", userAccountController.List)
-				authRouter.PATCH(":id", userAccountController.Update)
-				authRouter.DELETE(":id", userAccountController.Delete)
+				r.GET(":id", userAccountController.Get)
+				r.PUT(":id", userAccountController.Update)
+				r.DELETE(":id", userAccountController.Delete)
 			}
 		}
 	}

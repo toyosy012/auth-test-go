@@ -40,6 +40,11 @@ func main() {
 		log.Fatalf("テーブルのマイグレーションに失敗。: %s \n", err.Error())
 	}
 
+	err = mysqlDB.AutoMigrate(&db.Tokens{})
+	if err != nil {
+		log.Fatalf("テーブルのマイグレーションに失敗。: %s \n", err.Error())
+	}
+
 	newID := uuid.New()
 	encrypted, err := models.NewEncryptedPassword(env.UserPassword)
 	if err != nil {
