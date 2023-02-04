@@ -48,9 +48,13 @@ func main() {
 	}
 	userAccountController := controller.NewUserAccountHandler(userAccountSvc, *validate)
 
-	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret, env.AvailabilityTime)
-	authSvc := services.NewAuthorizer(userAccountRepo, tokenAuth)
-	jwtAuth := controller.NewJWTAuth(authSvc)
+	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret)
+	tokenRepo := db.NewTokenRepository(*dbClient)
+	tokenAuthSvc := services.NewTokenAuthorization(
+		tokenAuth, tokenRepo, userAccountRepo,
+		env.RefreshExpiration, env.AccessExpiration,
+	)
+	tokenAuthController := controller.NewTokenHandler(tokenAuthSvc)
 
 	userSessionRepo := db.NewUserSessionRepo(*dbClient)
 	storedAuthSvc := services.NewStoredAuthorization(userAccountRepo, userSessionRepo, env.AvailabilityTime)
