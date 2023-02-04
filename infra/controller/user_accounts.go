@@ -1,11 +1,11 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 
 	"auth-test/models"
 	"auth-test/services"
@@ -23,18 +23,24 @@ type UserAccountHandler struct {
 	validate validator.Validate
 }
 
-type UserPathParams struct {
+type userPathParams struct {
 	ID string `uri:"id" binding:"required,uuid"`
 }
 
-type InputUserAccount struct {
+type inputUserAccount struct {
 	Email    string `json:"email" binding:"required,email"`
 	Name     string `json:"name" binding:"required"`
 	Password string `json:"password" binding:"required,nist_sp_800_63"`
 }
 
+type userAccountResponse struct {
+	ID    string `json:"id" binding:"required,uuid"`
+	Email string `json:"email" binding:"required,email"`
+	Name  string `json:"name" binding:"required"`
+}
+
 func (h UserAccountHandler) Get(c *gin.Context) {
-	var params UserPathParams
+	var params userPathParams
 	if err := c.BindUri(&params); err != nil {
 		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
 		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
@@ -47,22 +53,27 @@ func (h UserAccountHandler) Get(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, userAccount)
+	c.JSON(http.StatusOK, userAccountResponse{ID: userAccount.ID(), Email: userAccount.Email(), Name: userAccount.Name()})
 }
 
+// List TODO ページネーションやオーダーをつける?
 func (h UserAccountHandler) List(c *gin.Context) {
 	accounts, err := h.service.List()
 	if err != nil {
-		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, accounts)
+	var results []userAccountResponse
+	for _, a := range accounts {
+		results = append(results, userAccountResponse{ID: a.ID(), Email: a.Email(), Name: a.Name()})
+	}
+
+	c.JSON(http.StatusOK, results)
 }
 
 func (h *UserAccountHandler) Create(c *gin.Context) {
-	var account InputUserAccount
+	var account inputUserAccount
 	err := c.Bind(&account)
 	if err != nil {
 		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
@@ -70,29 +81,25 @@ func (h *UserAccountHandler) Create(c *gin.Context) {
 		return
 	}
 
-	result, err := h.service.Create(models.UserAccount{
-		Email:    account.Email,
-		Name:     account.Name,
-		Password: account.Password,
-	})
-
+	result, err := h.service.Create(
+		models.NewUserAccount(uuid.New().String(), account.Email, account.Name, account.Password),
+	)
 	if err != nil {
-		fmt.Println(err.Error())
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, userAccountResponse{ID: result.ID(), Email: result.Email(), Name: result.Name()})
 }
 
 func (h *UserAccountHandler) Update(c *gin.Context) {
-	var params UserPathParams
+	var params userPathParams
 	if err := c.BindUri(&params); err != nil {
 		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
 		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
 		return
 	}
-	var account InputUserAccount
+	var account inputUserAccount
 	err := c.BindJSON(&account)
 	if err != nil {
 		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
@@ -100,23 +107,20 @@ func (h *UserAccountHandler) Update(c *gin.Context) {
 		return
 	}
 
-	result, err := h.service.Update(models.UserAccount{
-		ID:       params.ID,
-		Email:    account.Email,
-		Name:     account.Name,
-		Password: account.Password,
-	})
+	result, err := h.service.Update(
+		models.NewUserAccount(params.ID, account.Email, account.Name, account.Password),
+	)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, userAccountResponse{ID: result.ID(), Email: result.Email(), Name: result.Name()})
 }
 
 func (h UserAccountHandler) Delete(c *gin.Context) {
-	var params UserPathParams
+	var params userPathParams
 	if err := c.BindUri(&params); err != nil {
 		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
 		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())

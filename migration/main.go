@@ -30,25 +30,30 @@ func main() {
 		log.Fatalf("DBへの接続に失敗。: %s \n", err.Error())
 	}
 
-	err = mysqlDB.AutoMigrate(&db.UserSession{})
+	err = mysqlDB.AutoMigrate(&db.UserSessions{})
 	if err != nil {
 		log.Fatalf("テーブルのマイグレーションに失敗。: %s \n", err.Error())
 	}
 
-	err = mysqlDB.AutoMigrate(&db.UserAccount{})
+	err = mysqlDB.AutoMigrate(&db.UserAccounts{})
+	if err != nil {
+		log.Fatalf("テーブルのマイグレーションに失敗。: %s \n", err.Error())
+	}
+
+	err = mysqlDB.AutoMigrate(&db.Tokens{})
 	if err != nil {
 		log.Fatalf("テーブルのマイグレーションに失敗。: %s \n", err.Error())
 	}
 
 	newID := uuid.New()
-	encrypted, err := models.NewEncryptedPassword(env.UserPassword)
+	encrypted, err := models.NewEncryption(env.UserPassword)
 	if err != nil {
 		log.Fatal("パスワードの保存に失敗")
 	}
-	mysqlDB.Create(&db.UserAccount{
-		ID:    newID,
+	mysqlDB.Create(&db.UserAccounts{
+		ID:    newID.String(),
 		Email: env.Email,
 		Name:  env.UserName,
-		Hash:  encrypted.Hash,
+		Hash:  encrypted.Hash(),
 	})
 }

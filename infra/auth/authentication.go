@@ -10,30 +10,29 @@ import (
 	"auth-test/models"
 )
 
-func NewTokenAuthentication(secret string, availabilityTime time.Duration) TokenAuthentication {
+func NewTokenAuthentication(secret string) TokenAuthentication {
 	return TokenAuthentication{
-		secret:           secret,
-		availabilityTime: availabilityTime,
+		secret: secret,
 	}
 }
 
 type TokenAuthentication struct {
-	secret           string
-	availabilityTime time.Duration
+	secret string
 }
 
-func (a TokenAuthentication) Sign(account models.UserAccount) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
+func (a TokenAuthentication) Sign(accessToken models.AccessTokenInput) (string, error) {
+	jwtToken := jwt.New(jwt.SigningMethodHS256)
 
-	claims := token.Claims.(jwt.MapClaims)
-	claims["sub"] = account.ID
-	claims["email"] = account.Email
-	now := time.Now()
-	claims["iat"] = now.Unix()
+	claims := jwtToken.Claims.(jwt.MapClaims)
+	claims["sub"] = accessToken.AccountID()
+	claims["email"] = accessToken.Email()
+	claims["iat"] = accessToken.Now().Unix()
 
-	exp := now.Add(a.availabilityTime)
-	claims["exp"] = time.Date(exp.Year(), exp.Month(), exp.Day(), exp.Hour(), exp.Minute(), exp.Second(), 0, exp.Location()).Unix()
-	signedToken, err := token.SignedString([]byte(a.secret))
+	exp := accessToken.ExpiredAt()
+	claims["exp"] = time.Date(
+		exp.Year(), exp.Month(), exp.Day(), exp.Hour(), exp.Minute(), exp.Second(), 0, exp.Location(),
+	).Unix()
+	signedToken, err := jwtToken.SignedString([]byte(a.secret))
 	if err != nil {
 		return "", errors.New("")
 	}
@@ -62,7 +61,7 @@ func (a TokenAuthentication) Verify(token string) error {
 		return errors.New("bad request token")
 	}
 
-	if _, ok := claims["sub"].(string); !ok {
+	if _, ok = claims["sub"].(string); !ok {
 		return errors.New("not found user")
 	}
 
