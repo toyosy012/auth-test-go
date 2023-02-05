@@ -43,24 +43,24 @@ func (h UserAccountHandler) Get(c *gin.Context) {
 	var params userPathParams
 	if err := c.BindUri(&params); err != nil {
 		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		c.AbortWithStatusJSON(http.StatusBadRequest, pathParamErr.getResponse())
 		return
 	}
 
 	userAccount, err := h.service.Find(params.ID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
-		return
+		status, response := newErrResponse(err, params.ID)
+		c.AbortWithStatusJSON(status, response)
 	}
 
 	c.JSON(http.StatusOK, userAccountResponse{ID: userAccount.ID(), Email: userAccount.Email(), Name: userAccount.Name()})
 }
 
-// List TODO ページネーションやオーダーをつける?
 func (h UserAccountHandler) List(c *gin.Context) {
 	accounts, err := h.service.List()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		status, response := newErrResponse(err, "")
+		c.AbortWithStatusJSON(status, response)
 		return
 	}
 
@@ -77,7 +77,7 @@ func (h *UserAccountHandler) Create(c *gin.Context) {
 	err := c.Bind(&account)
 	if err != nil {
 		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, accountBodyParam.getResponse())
+		c.AbortWithStatusJSON(http.StatusBadRequest, accountBodyParam.getResponse())
 		return
 	}
 
@@ -85,7 +85,8 @@ func (h *UserAccountHandler) Create(c *gin.Context) {
 		models.NewUserAccount(uuid.New().String(), account.Email, account.Name, account.Password),
 	)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		status, response := newErrResponse(err, account.Email)
+		c.AbortWithStatusJSON(status, response)
 		return
 	}
 
@@ -96,14 +97,14 @@ func (h *UserAccountHandler) Update(c *gin.Context) {
 	var params userPathParams
 	if err := c.BindUri(&params); err != nil {
 		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		c.AbortWithStatusJSON(http.StatusBadRequest, pathParamErr.getResponse())
 		return
 	}
 	var account inputUserAccount
 	err := c.BindJSON(&account)
 	if err != nil {
 		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, accountBodyParam.getResponse())
+		c.AbortWithStatusJSON(http.StatusBadRequest, accountBodyParam.getResponse())
 		return
 	}
 
@@ -112,7 +113,8 @@ func (h *UserAccountHandler) Update(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		status, response := newErrResponse(err, account.Email)
+		c.AbortWithStatusJSON(status, response)
 		return
 	}
 
@@ -123,12 +125,13 @@ func (h UserAccountHandler) Delete(c *gin.Context) {
 	var params userPathParams
 	if err := c.BindUri(&params); err != nil {
 		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		c.AbortWithStatusJSON(http.StatusBadRequest, pathParamErr.getResponse())
 		return
 	}
 	err := h.service.Delete(params.ID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		status, response := newErrResponse(err, params.ID)
+		c.AbortWithStatusJSON(status, response)
 		return
 	}
 

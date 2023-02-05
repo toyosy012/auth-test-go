@@ -34,13 +34,14 @@ func (a UserSession) Login(c *gin.Context) {
 	err := c.Bind(&form)
 	if err != nil {
 		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, accountBodyParam.getResponse())
+		c.AbortWithStatusJSON(http.StatusBadRequest, accountBodyParam.getResponse())
 		return
 	}
 
 	token, err := a.session.Sign(form.Email, form.Password, uuid.New().String(), time.Now())
 	if err != nil {
-		c.JSON(http.StatusForbidden, err.Error())
+		status, response := newErrResponse(err, form.Email)
+		c.AbortWithStatusJSON(status, response)
 		return
 	}
 
@@ -54,20 +55,21 @@ func (a UserSession) CheckAuthenticatedOwner(c *gin.Context) {
 
 	token := strings.Replace(t, "Bearer ", "", 1)
 	if "" == token {
-		c.AbortWithError(http.StatusBadRequest, errors.New("empty token"))
+		c.AbortWithStatusJSON(http.StatusBadRequest, errors.New("empty token"))
 		return
 	}
 
 	var params userPathParams
 	if err := c.BindUri(&params); err != nil {
 		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		c.AbortWithStatusJSON(http.StatusBadRequest, pathParamErr.getResponse())
 		return
 	}
 
 	err := a.session.FindOwner(params.ID, token)
 	if err != nil {
-		c.AbortWithError(http.StatusNotFound, err)
+		status, response := newErrResponse(err, params.ID)
+		c.AbortWithStatusJSON(status, response)
 		return
 	}
 
@@ -80,13 +82,13 @@ func (a UserSession) Logout(c *gin.Context) {
 	var params userPathParams
 	if err := c.BindUri(&params); err != nil {
 		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		c.AbortWithStatusJSON(http.StatusBadRequest, pathParamErr.getResponse())
 		return
 	}
 
 	if err := a.session.SignOut(params.ID, token); err != nil {
 		pathParamErr := newPathParamError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, pathParamErr.getResponse())
+		c.AbortWithStatusJSON(http.StatusBadRequest, pathParamErr.getResponse())
 		return
 	}
 	return
