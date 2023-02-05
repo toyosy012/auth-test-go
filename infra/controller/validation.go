@@ -11,10 +11,6 @@ var (
 	passwordValidate = nspv.NewValidator()
 )
 
-type validateError interface {
-	getResponse() errorResponse
-}
-
 func newPathParamError(err validator.FieldError) pathParamError {
 	return pathParamError{
 		err: err,
@@ -25,12 +21,12 @@ type pathParamError struct {
 	err validator.FieldError
 }
 
-func (e pathParamError) getResponse() errorResponse {
-	var response errorResponse
+func (e pathParamError) getResponse() errResponse {
+	var response errResponse
 	errorMsg := e.err
 	switch errorMsg.Field() {
 	case "ID":
-		response = newErrorResponse(
+		response = newValidationErr(
 			fmt.Sprintf("ユーザIDの値 %s は不正なフォーマットです", errorMsg.Value()),
 			"フォーマットを 12345678-89ab-cdef-ghij-klmopqrstuvw にして下さい",
 		)
@@ -64,17 +60,17 @@ type AuthBodyError struct {
 }
 
 // TODO バリデーションエラーの詳細な情報を情報を取得する方法を調査する
-func (e AuthBodyError) getResponse() errorResponse {
-	var response errorResponse
+func (e AuthBodyError) getResponse() errResponse {
+	var response errResponse
 	errorMsg := e.err
 	switch errorMsg.Field() {
 	case "Password":
-		response = newErrorResponse(
+		response = newValidationErr(
 			"パスワードが不正なフォーマットです",
 			"",
 		)
 	case "Email":
-		response = newErrorResponse(
+		response = newValidationErr(
 			fmt.Sprintf("emailアドレス %s は不正なフォーマットです", errorMsg.Value()),
 			"",
 		)
