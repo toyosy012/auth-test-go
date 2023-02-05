@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -37,13 +36,14 @@ func (h TokenHandler) Claim(c *gin.Context) {
 	err := c.Bind(&form)
 	if err != nil {
 		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, accountBodyParam.getResponse())
+		c.AbortWithStatusJSON(http.StatusBadRequest, accountBodyParam.getResponse())
 		return
 	}
 
 	token, err := h.authenticateSvc.Claim(form.Email, form.Password, uuid.New().String(), time.Now())
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		status, response := newErrResponse(err, form.Email)
+		c.AbortWithStatusJSON(status, response)
 		return
 	}
 
@@ -55,14 +55,15 @@ func (h TokenHandler) Refresh(c *gin.Context) {
 	err := c.Bind(&refresh)
 	if err != nil {
 		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
-		c.JSON(http.StatusBadRequest, accountBodyParam.getResponse())
+		c.AbortWithStatusJSON(http.StatusBadRequest, accountBodyParam.getResponse())
 		return
 	}
 
 	now := time.Now()
 	token, err := h.authenticateSvc.Refresh(uuid.New().String(), refresh.Value, now.UTC())
 	if err != nil {
-		c.AbortWithError(http.StatusForbidden, err)
+		status, response := newErrResponse(err, refresh.Value)
+		c.AbortWithStatusJSON(status, response)
 		return
 	}
 
@@ -74,13 +75,17 @@ func (h TokenHandler) VerifyAccessToken(c *gin.Context) {
 
 	token := strings.Replace(t, "Bearer ", "", 1)
 	if "" == token {
-		c.AbortWithError(http.StatusBadRequest, errors.New("empty token"))
+		c.AbortWithStatusJSON(
+			http.StatusForbidden,
+			errResponse{Message: services.EmptyToken.Error(), Detail: "トークンは必須です"},
+		)
 		return
 	}
 
 	err := h.authenticateSvc.Verify(token)
 	if err != nil {
-		c.AbortWithError(http.StatusForbidden, err)
+		status, response := newErrResponse(err, "")
+		c.AbortWithStatusJSON(status, response)
 		return
 	}
 

@@ -13,7 +13,7 @@ type UserAccount struct {
 func (a UserAccount) Find(id string) (*models.UserAccount, error) {
 	account, err := a.repo.Find(id)
 	if err != nil {
-		return nil, err
+		return nil, NewApplicationErr(FailedShowUser, err)
 	}
 	return account, nil
 }
@@ -21,7 +21,7 @@ func (a UserAccount) Find(id string) (*models.UserAccount, error) {
 func (a UserAccount) FindByEmail(email string) (*models.UserAccount, error) {
 	account, err := a.repo.FindByEmail(email)
 	if err != nil {
-		return nil, err
+		return nil, NewApplicationErr(FailedShowUser, err)
 	}
 	return account, nil
 }
@@ -29,28 +29,30 @@ func (a UserAccount) FindByEmail(email string) (*models.UserAccount, error) {
 func (a UserAccount) List() ([]models.UserAccount, error) {
 	accounts, err := a.repo.List()
 	if err != nil {
-		return nil, err
+		return nil, NewApplicationErr(FailedListUser, err)
 	}
 	return accounts, nil
 }
 
 func (a UserAccount) Create(account models.UserAccount) (*models.UserAccount, error) {
-	updated, err := a.repo.Insert(account.ID(), account.Email(), account.Name(), account.Password())
+	user, err := a.repo.Insert(account.ID(), account.Email(), account.Name(), account.Password())
 	if err != nil {
-		return nil, err
+		return nil, NewApplicationErr(FailedCreateUser, err)
 	}
-	return updated, nil
+	return user, nil
 }
 
 func (a UserAccount) Update(account models.UserAccount) (*models.UserAccount, error) {
 	updated, err := a.repo.Update(account)
 	if err != nil {
-		return nil, err
+		return nil, NewApplicationErr(FailedUpdateUser, err)
 	}
 	return updated, nil
 }
 
 func (a UserAccount) Delete(id string) error {
-	err := a.repo.Delete(id)
-	return err
+	if err := a.repo.Delete(id); err != nil {
+		return NewApplicationErr(FailedDeleteUser, err)
+	}
+	return nil
 }
