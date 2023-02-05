@@ -8,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 
 	"auth-test/models"
+	"auth-test/services"
 )
 
 func NewTokenAuthentication(secret string) TokenAuthentication {
@@ -34,7 +35,7 @@ func (a TokenAuthentication) Sign(accessToken models.AccessTokenInput) (string, 
 	).Unix()
 	signedToken, err := jwtToken.SignedString([]byte(a.secret))
 	if err != nil {
-		return "", errors.New("")
+		return "", services.NewApplicationErr(services.FailedSingedToken, err)
 	}
 
 	return signedToken, nil
@@ -43,7 +44,7 @@ func (a TokenAuthentication) Sign(accessToken models.AccessTokenInput) (string, 
 func (a TokenAuthentication) Verify(token string) error {
 	signedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New(fmt.Sprintf("unexpected signing method: %v", t.Header["alg"]))
+			return nil, services.NewApplicationErr(services.InvalidToken, errors.New("証明の検証に失敗しました"))
 		}
 		return []byte(a.secret), nil
 	})
@@ -53,22 +54,23 @@ func (a TokenAuthentication) Verify(token string) error {
 	}
 
 	if signedToken == nil {
-		return errors.New("bad request token")
+		return services.NewApplicationErr(services.InvalidToken, errors.New("トークンが存在しません"))
 	}
 
 	claims, ok := signedToken.Claims.(jwt.MapClaims)
 	if !ok {
-		return errors.New("bad request token")
+		return services.NewApplicationErr(services.InvalidClaim, errors.New("クレームのキャストに失敗"))
 	}
 
 	if _, ok = claims["sub"].(string); !ok {
-		return errors.New("not found user")
+		return services.NewApplicationErr(services.InvalidIssued, errors.New("発行者のキャストに失敗"))
 	}
 
 	now := time.Now()
 	ok = claims.VerifyExpiresAt(now.Unix(), false)
 	if !ok {
-		return errors.New("authentication expired")
+		return services.NewApplicationErr(
+			services.ExpiredToken, fmt.Errorf("有効期限: %s, 現在時刻: %d", claims["exp"], now.Unix()))
 	}
 
 	return nil

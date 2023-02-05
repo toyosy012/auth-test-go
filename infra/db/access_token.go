@@ -1,11 +1,20 @@
 package db
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
-	"auth-test/models"
-
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
+
+	"auth-test/models"
+	"auth-test/services"
+)
+
+const (
+	MySQLDuplicateEntry = 1062
+	NoDeleteRecords     = 0
 )
 
 type Tokens struct {
@@ -35,8 +44,13 @@ func (r TokenRepository) Insert(refreshToken models.RefreshTokenInput) (string, 
 				ExpiredAt:     refreshToken.ExpiredAt(),
 			},
 		)
-	if result.Error != nil {
-		return "", nil
+	if err := result.Error; err != nil {
+		switch {
+		case err.(*mysql.MySQLError).Number == MySQLDuplicateEntry:
+			return "", services.NewApplicationErr(services.DuplicateToken, err)
+		default:
+			return "", services.NewApplicationErr(services.InternalServerErr, err)
+		}
 	}
 
 	var t Tokens
@@ -46,14 +60,24 @@ func (r TokenRepository) Insert(refreshToken models.RefreshTokenInput) (string, 
 		Find(&t)
 
 	if err := result.Error; err != nil {
-		return "", err
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			return "", services.NewApplicationErr(services.NoTokenRecord, err)
+		default:
+			return "", services.NewApplicationErr(services.InternalServerErr, err)
+		}
 	}
 	return t.ID, nil
 }
 
 func (r TokenRepository) Delete(refreshToken string) error {
-	if result := r.client.Table("tokens").Delete(Tokens{ID: refreshToken}); result.Error != nil {
-		return result.Error
+	result := r.client.
+		Table("tokens").
+		Delete(Tokens{ID: refreshToken})
+	if result.RowsAffected == NoDeleteRecords {
+		return services.NewApplicationErr(services.NoTokenRecord, fmt.Errorf("削除対象: %s", refreshToken))
+	} else if result.Error != nil {
+		return services.NewApplicationErr(services.InternalServerErr, result.Error)
 	}
 	return nil
 }
@@ -65,8 +89,13 @@ func (r TokenRepository) FindOwner(refreshToken string, now time.Time) (*models.
 		Where("id = ? AND ? < expired_at", refreshToken, now.String()).
 		Preload("UserAccount").
 		Find(&token)
-	if result.Error != nil {
-		return nil, result.Error
+	if err := result.Error; err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			return nil, services.NewApplicationErr(services.NoUserRecord, err)
+		default:
+			return nil, services.NewApplicationErr(services.InternalServerErr, err)
+		}
 	}
 	response := models.NewTokenOwner(token.UserAccount.ID, token.UserAccount.Email)
 	return &response, nil
