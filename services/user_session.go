@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"net/http"
 	"time"
 
 	"auth-test/models"
@@ -37,12 +36,12 @@ type UserSession struct {
 func (s UserSession) Sign(email, password, sessionID string, now time.Time) (string, error) {
 	account, err := s.userAccountRepo.FindByEmail(email)
 	if err != nil {
-		return "", err
+		return "", NewApplicationErr(FailedLogin, err)
 	}
 
 	hash := models.NewEncryptedPassword(account.Password())
 	if err = hash.MatchWith(password); err != nil {
-		return "", err
+		return "", NewApplicationErr(FailedLogin, errors.New("パスワードの検証に失敗"))
 	}
 
 	sess := models.NewSession(account.ID(), sessionID, now.Add(s.expiration))
@@ -52,7 +51,7 @@ func (s UserSession) Sign(email, password, sessionID string, now time.Time) (str
 func (s UserSession) Verify(token string) error {
 	err := s.userSessionRepo.Verify(token)
 	if err != nil {
-		return err
+		return NewApplicationErr(FailedCheckLogin, err)
 	}
 
 	return nil
@@ -61,16 +60,19 @@ func (s UserSession) Verify(token string) error {
 func (s UserSession) FindOwner(id, token string) error {
 	owner, err := s.userSessionRepo.FindOwner(token)
 	if err != nil {
-		return err
+		return NewApplicationErr(FailedCheckLogin, err)
 	}
 
 	if owner != id {
-		return errors.New(http.StatusText(http.StatusNotFound))
+		return NewApplicationErr(FailedCheckLogin, errors.New("ログイン情報のユーザと異なります"))
 	}
 
 	return nil
 }
 
 func (s UserSession) SignOut(owner, token string) error {
-	return s.userSessionRepo.Delete(owner, token)
+	if err := s.userSessionRepo.Delete(owner, token); err != nil {
+		return NewApplicationErr(FailedLogout, err)
+	}
+	return nil
 }
