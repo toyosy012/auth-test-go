@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -55,7 +54,10 @@ func (a UserSession) CheckAuthenticatedOwner(c *gin.Context) {
 
 	token := strings.Replace(t, "Bearer ", "", 1)
 	if "" == token {
-		c.AbortWithStatusJSON(http.StatusBadRequest, errors.New("empty token"))
+		c.AbortWithStatusJSON(
+			http.StatusForbidden,
+			errResponse{Message: services.EmptyToken.Error(), Detail: "トークンは必須です"},
+		)
 		return
 	}
 

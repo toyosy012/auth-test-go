@@ -111,7 +111,6 @@ func (h *UserAccountHandler) Update(c *gin.Context) {
 	result, err := h.service.Update(
 		models.NewUserAccount(params.ID, account.Email, account.Name, account.Password),
 	)
-
 	if err != nil {
 		status, response := newErrResponse(err, account.Email)
 		c.AbortWithStatusJSON(status, response)

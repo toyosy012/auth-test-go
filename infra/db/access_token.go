@@ -72,6 +72,7 @@ func (r TokenRepository) Insert(refreshToken models.RefreshTokenInput) (string, 
 
 func (r TokenRepository) Delete(refreshToken string) error {
 	result := r.client.
+		Unscoped().
 		Table("tokens").
 		Delete(Tokens{ID: refreshToken})
 	if result.RowsAffected == NoDeleteRecords {

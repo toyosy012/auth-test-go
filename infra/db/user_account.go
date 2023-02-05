@@ -148,7 +148,7 @@ func (r *UserAccountRepository) Delete(id string) error {
 		return services.NewApplicationErr(services.InvalidUUIDFormat, err)
 	}
 
-	result := r.mysql.Delete(&UserAccounts{}, deletedUUID)
+	result := r.mysql.Unscoped().Delete(&UserAccounts{}, deletedUUID)
 	if result.RowsAffected == NoDeleteRecords {
 		return services.NewApplicationErr(services.NoUserRecord, fmt.Errorf("削除対象ID: %s", id))
 	} else if result.Error != nil {
