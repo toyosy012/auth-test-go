@@ -54,8 +54,7 @@ func (r UserSessionRepository) Register(session models.Session) (string, error) 
 	var sess UserSessions
 	result = r.client.
 		Where("id = ? AND user_id = ?", session.Token(), session.Owner()).
-		Limit(1).
-		Find(&sess)
+		First(&sess)
 
 	if err := result.Error; err != nil {
 		switch {

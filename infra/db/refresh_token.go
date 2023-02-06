@@ -56,8 +56,7 @@ func (r TokenRepository) Insert(refreshToken models.RefreshTokenInput) (string, 
 	var t Tokens
 	result = r.client.
 		Where("id = ? AND user_account_id = ?", refreshToken.Value(), refreshToken.AccountID()).
-		Limit(1).
-		Find(&t)
+		First(&t)
 
 	if err := result.Error; err != nil {
 		switch {
@@ -89,7 +88,7 @@ func (r TokenRepository) FindOwner(refreshToken string, now time.Time) (*models.
 		Table("tokens").
 		Where("id = ? AND ? < expired_at", refreshToken, now.String()).
 		Preload("UserAccount").
-		Find(&token)
+		First(&token)
 	if err := result.Error; err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
