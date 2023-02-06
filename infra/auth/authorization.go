@@ -11,17 +11,17 @@ import (
 	"auth-test/services"
 )
 
-func NewTokenAuthentication(secret string) TokenAuthentication {
-	return TokenAuthentication{
+func NewTokenAuthorization(secret string) TokenAuthorization {
+	return TokenAuthorization{
 		secret: secret,
 	}
 }
 
-type TokenAuthentication struct {
+type TokenAuthorization struct {
 	secret string
 }
 
-func (a TokenAuthentication) Sign(accessToken models.AccessTokenInput) (string, error) {
+func (a TokenAuthorization) Sign(accessToken models.IDTokenInput) (string, error) {
 	jwtToken := jwt.New(jwt.SigningMethodHS256)
 
 	claims := jwtToken.Claims.(jwt.MapClaims)
@@ -41,7 +41,7 @@ func (a TokenAuthentication) Sign(accessToken models.AccessTokenInput) (string, 
 	return signedToken, nil
 }
 
-func (a TokenAuthentication) Verify(token string) error {
+func (a TokenAuthorization) Verify(token string) error {
 	signedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, services.NewApplicationErr(services.InvalidToken, errors.New("証明の検証に失敗しました"))

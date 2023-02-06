@@ -55,7 +55,7 @@ func (a UserSession) CheckAuthenticatedOwner(c *gin.Context) {
 	token := strings.Replace(t, "Bearer ", "", 1)
 	if "" == token {
 		c.AbortWithStatusJSON(
-			http.StatusForbidden,
+			http.StatusUnauthorized,
 			errResponse{Message: services.EmptyToken.Error(), Detail: "トークンは必須です"},
 		)
 		return

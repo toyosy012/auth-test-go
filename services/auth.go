@@ -6,7 +6,7 @@ import (
 	"auth-test/models"
 )
 
-type OauthToken interface {
+type Authorizer interface {
 	Claim(string, string, string, time.Time) (*models.Token, error)
 	Refresh(string, string, time.Time) (*models.Token, error)
 	Verify(string) error

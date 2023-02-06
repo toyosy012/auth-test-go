@@ -21,14 +21,14 @@ type AuthToken struct {
 	Refresh string `json:"refresh" binding:"required,uuid"`
 }
 
-func NewTokenHandler(service services.OauthToken) TokenHandler {
+func NewTokenHandler(service services.Authorizer) TokenHandler {
 	return TokenHandler{
 		authenticateSvc: service,
 	}
 }
 
 type TokenHandler struct {
-	authenticateSvc services.OauthToken
+	authenticateSvc services.Authorizer
 }
 
 func (h TokenHandler) Claim(c *gin.Context) {
@@ -76,7 +76,7 @@ func (h TokenHandler) VerifyIDToken(c *gin.Context) {
 	token := strings.Replace(t, "Bearer ", "", 1)
 	if "" == token {
 		c.AbortWithStatusJSON(
-			http.StatusForbidden,
+			http.StatusUnauthorized,
 			errResponse{Message: services.EmptyToken.Error(), Detail: "トークンは必須です"},
 		)
 		return
