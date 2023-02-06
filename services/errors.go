@@ -9,7 +9,7 @@ var (
 	NoTokenRecord      = errors.New("トークンデータは存在しません")
 	DuplicateToken     = errors.New("トークンが既に存在します")
 	NoUsersRecord      = errors.New("ユーザリストの取得に失敗")
-	NoUserRecord       = errors.New("ユーザ情報が取得できません")
+	NoUserRecord       = errors.New("ユーザは存在しません")
 	NoUserEmail        = errors.New("emailで登録されたユーザは存在しません")
 	DuplicateUserEmail = errors.New("emailが既に存在しています")
 	EmptyToken         = errors.New("トークンが存在しません")

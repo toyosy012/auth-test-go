@@ -51,6 +51,7 @@ func (h UserAccountHandler) Get(c *gin.Context) {
 	if err != nil {
 		status, response := newErrResponse(err, params.ID)
 		c.AbortWithStatusJSON(status, response)
+		return
 	}
 
 	c.JSON(http.StatusOK, userAccountResponse{ID: userAccount.ID(), Email: userAccount.Email(), Name: userAccount.Name()})
@@ -101,8 +102,7 @@ func (h *UserAccountHandler) Update(c *gin.Context) {
 		return
 	}
 	var account inputUserAccount
-	err := c.BindJSON(&account)
-	if err != nil {
+	if err := c.BindJSON(&account); err != nil {
 		accountBodyParam := newAccountBodyError(err.(validator.ValidationErrors)[0])
 		c.AbortWithStatusJSON(http.StatusBadRequest, accountBodyParam.getResponse())
 		return
