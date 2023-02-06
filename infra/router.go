@@ -3,16 +3,17 @@ package infra
 import (
 	"fmt"
 
-	"auth-test/infra/auth"
-	"auth-test/infra/controller"
-	"auth-test/infra/db"
-	"auth-test/services"
-
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"github.com/kelseyhightower/envconfig"
 	"gorm.io/gorm"
+
+	"auth-test/infra/auth"
+	"auth-test/infra/configuration"
+	"auth-test/infra/controller"
+	"auth-test/infra/db"
+	"auth-test/services"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 )
 
 func Run() error {
-	var env Environment
+	var env configuration.Environment
 	err := envconfig.Process("", &env)
 	if err != nil {
 		return err
@@ -43,7 +44,7 @@ func Run() error {
 		}
 	}
 
-	router, err := setUpRouter(env, dbClient, validate)
+	router, err := setUpRouter(env, *dbClient, *validate)
 	if err != nil {
 		return err
 	}
@@ -51,19 +52,19 @@ func Run() error {
 	return router.Run("0.0.0.0:8080")
 }
 
-func setUpRouter(env Environment, dbClient *gorm.DB, validate *validator.Validate) (*gin.Engine, error) {
-	userAccountRepo := db.NewUserAccountRepository(*dbClient)
+func setUpRouter(env configuration.Environment, dbClient gorm.DB, validate validator.Validate) (*gin.Engine, error) {
+	userAccountRepo := db.NewUserAccountRepository(dbClient)
 	userAccountSvc := services.NewUserAccount(userAccountRepo)
-	userAccountController := controller.NewUserAccountHandler(userAccountSvc, *validate)
+	userAccountController := controller.NewUserAccountHandler(userAccountSvc, validate)
 
 	tokenAuth := auth.NewTokenAuthorization(env.EncryptSecret)
-	tokenRepo := db.NewTokenRepository(*dbClient)
+	tokenRepo := db.NewTokenRepository(dbClient)
 	tokenAuthSvc := services.NewTokenAuthorization(
 		tokenAuth, tokenRepo, userAccountRepo, env.RefreshExpiration, env.AccessExpiration,
 	)
 	tokenAuthController := controller.NewTokenHandler(tokenAuthSvc)
 
-	userSessionRepo := db.NewUserSessionRepo(*dbClient)
+	userSessionRepo := db.NewUserSessionRepo(dbClient)
 	userSessionSvc := services.NewSessionAuthorization(userAccountRepo, userSessionRepo, env.SessionExpiration)
 	userSessionController := controller.NewSessionAuth(userSessionSvc)
 
