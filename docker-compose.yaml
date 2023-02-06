@@ -27,11 +27,11 @@ services:
       EMAIL: ${EMAIL:-invalid}
       USER_PASSWORD: ${USER_PASSWORD:-invalid}
       USER_NAME: ${USER_NAME:-invalid}
-      ENCRYPT_SECRET: ${EncryptSecret:-invalid}
+      ENCRYPT_SECRET: ${ENCRYPT_SECRET:-invalid}
       HOST: auth-test-db
       PASSWORD: ${PASSWORD:-invalid}
       GIN_MODE: release
-     # databaseが起動してヘルスチェックするまで待機する設定なのだが機能しないので、commandで待機スクリプトを仕掛ける
+#    databaseが起動してヘルスチェックするまで待機する設定なのだが機能しないので、commandで待機スクリプトを仕掛ける
 #    depends_on:
 #      database:
 #        condition: service_healthy
