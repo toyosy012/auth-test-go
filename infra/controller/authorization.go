@@ -16,8 +16,8 @@ type RefreshToken struct {
 	Value string `json:"value" binding:"required,uuid"`
 }
 
-type OauthToken struct {
-	Access  string `json:"access" binding:"required"`
+type AuthToken struct {
+	IDToken string `json:"id" binding:"required"`
 	Refresh string `json:"refresh" binding:"required,uuid"`
 }
 
@@ -47,7 +47,7 @@ func (h TokenHandler) Claim(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, OauthToken{Access: token.Access(), Refresh: token.Refresh()})
+	c.JSON(http.StatusOK, AuthToken{IDToken: token.IDToken(), Refresh: token.Refresh()})
 }
 
 func (h TokenHandler) Refresh(c *gin.Context) {
@@ -67,10 +67,10 @@ func (h TokenHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, OauthToken{Access: token.Access(), Refresh: token.Refresh()})
+	c.JSON(http.StatusOK, AuthToken{IDToken: token.IDToken(), Refresh: token.Refresh()})
 }
 
-func (h TokenHandler) VerifyAccessToken(c *gin.Context) {
+func (h TokenHandler) VerifyIDToken(c *gin.Context) {
 	t := c.GetHeader("Authorization")
 
 	token := strings.Replace(t, "Bearer ", "", 1)
