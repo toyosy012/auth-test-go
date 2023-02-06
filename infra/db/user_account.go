@@ -33,10 +33,8 @@ type UserAccountRepository struct {
 	mysql gorm.DB
 }
 
-func NewUserAccountRepository(client gorm.DB) (*UserAccountRepository, error) {
-	return &UserAccountRepository{
-		mysql: client,
-	}, nil
+func NewUserAccountRepository(client gorm.DB) *UserAccountRepository {
+	return &UserAccountRepository{mysql: client}
 }
 
 func (r *UserAccountRepository) Find(id string) (*models.UserAccount, error) {
