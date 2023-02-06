@@ -9,13 +9,13 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"auth-test/infra"
+	"auth-test/infra/configuration"
 	"auth-test/infra/db"
 	"auth-test/models"
 )
 
 func main() {
-	var env infra.Environment
+	var env configuration.Environment
 	err := envconfig.Process("", &env)
 
 	if err != nil {
