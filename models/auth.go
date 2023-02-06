@@ -5,12 +5,12 @@ import (
 )
 
 type Authorizer interface {
-	Sign(AccessTokenInput) (string, error)
+	Sign(IDTokenInput) (string, error)
 	Verify(string) error
 }
 
-func NewAccessTokenInput(accountID, email string, now, expiration time.Time) AccessTokenInput {
-	return AccessTokenInput{
+func NewAccessTokenInput(accountID, email string, now, expiration time.Time) IDTokenInput {
+	return IDTokenInput{
 		accountID: accountID,
 		email:     email,
 		now:       now,
@@ -18,18 +18,18 @@ func NewAccessTokenInput(accountID, email string, now, expiration time.Time) Acc
 	}
 }
 
-// AccessTokenInput TODO Register Claim NamesとPrivate Claim Namesを別途定義して組み込むべき?
-type AccessTokenInput struct {
+// IDTokenInput TODO Register Claim NamesとPrivate Claim Namesを別途定義して組み込むべき?
+type IDTokenInput struct {
 	accountID string
 	email     string
 	now       time.Time
 	expiredAt time.Time
 }
 
-func (i AccessTokenInput) AccountID() string    { return i.accountID }
-func (i AccessTokenInput) Email() string        { return i.email }
-func (i AccessTokenInput) Now() time.Time       { return i.now }
-func (i AccessTokenInput) ExpiredAt() time.Time { return i.expiredAt }
+func (i IDTokenInput) AccountID() string    { return i.accountID }
+func (i IDTokenInput) Email() string        { return i.email }
+func (i IDTokenInput) Now() time.Time       { return i.now }
+func (i IDTokenInput) ExpiredAt() time.Time { return i.expiredAt }
 
 type TokenAccessor interface {
 	Insert(RefreshTokenInput) (string, error)
@@ -55,14 +55,14 @@ func (i RefreshTokenInput) AccountID() string    { return i.accountID }
 func (i RefreshTokenInput) Value() string        { return i.value }
 func (i RefreshTokenInput) ExpiredAt() time.Time { return i.expiredAt }
 
-func NewToken(access, refresh string) Token { return Token{access: access, refresh: refresh} }
+func NewToken(id, refresh string) Token { return Token{idToken: id, refresh: refresh} }
 
 type Token struct {
-	access  string
+	idToken string
 	refresh string
 }
 
-func (t Token) Access() string  { return t.access }
+func (t Token) IDToken() string { return t.idToken }
 func (t Token) Refresh() string { return t.refresh }
 
 func NewTokenOwner(id string, email string) TokenOwner { return TokenOwner{id: id, email: email} }

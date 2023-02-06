@@ -7,6 +7,10 @@ import (
 	"github.com/s-tajima/nspv"
 )
 
+const (
+	uuidTokenFormat = "フォーマットを 12345678-89ab-cdef-ghij-klmopqrstuvw にして下さい"
+)
+
 var (
 	passwordValidate = nspv.NewValidator()
 )
@@ -28,7 +32,7 @@ func (e pathParamError) getResponse() errResponse {
 	case "ID":
 		response = newValidationErr(
 			fmt.Sprintf("ユーザIDの値 %s は不正なフォーマットです", errorMsg.Value()),
-			"フォーマットを 12345678-89ab-cdef-ghij-klmopqrstuvw にして下さい",
+			uuidTokenFormat,
 		)
 	}
 
@@ -73,6 +77,11 @@ func (e AuthBodyError) getResponse() errResponse {
 		response = newValidationErr(
 			fmt.Sprintf("emailアドレス %s は不正なフォーマットです", errorMsg.Value()),
 			"",
+		)
+	case "Value":
+		response = newValidationErr(
+			fmt.Sprintf("リフレッシュトークン %s は不正なフォーマットです", errorMsg.Value()),
+			uuidTokenFormat,
 		)
 	}
 

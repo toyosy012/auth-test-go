@@ -49,7 +49,7 @@ func main() {
 	userAccountSvc := services.NewUserAccount(userAccountRepo)
 	userAccountController := controller.NewUserAccountHandler(userAccountSvc, *validate)
 
-	tokenAuth := auth.NewTokenAuthentication(env.EncryptSecret)
+	tokenAuth := auth.NewTokenAuthorization(env.EncryptSecret)
 	tokenRepo := db.NewTokenRepository(*dbClient)
 	tokenAuthSvc := services.NewTokenAuthorization(
 		tokenAuth, tokenRepo, userAccountRepo,
@@ -82,11 +82,11 @@ func main() {
 			}
 		}
 
-		oauthRouter := v1.Group("oauth")
-		oauthRouter.POST("claim", tokenAuthController.Claim)
-		oauthRouter.POST("refresh", tokenAuthController.Refresh)
+		authRouter := v1.Group("auth")
+		authRouter.POST("claim", tokenAuthController.Claim)
+		authRouter.POST("refresh", tokenAuthController.Refresh)
 		{
-			r := oauthRouter.Group("users").Use(tokenAuthController.VerifyAccessToken)
+			r := authRouter.Group("users").Use(tokenAuthController.VerifyIDToken)
 			{
 				r.GET(":id", userAccountController.Get)
 				r.PUT(":id", userAccountController.Update)

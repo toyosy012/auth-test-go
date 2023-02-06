@@ -13,10 +13,11 @@ import (
 )
 
 type UserSessions struct {
-	ID        string    `gorm:"type:varchar(36);primaryKey;not null"`
-	UserID    string    `gorm:"type:varchar(36);type:varchar(36);not null"`
-	ExpiredAt time.Time `gorm:"type:datetime(0);not null"`
-	CreatedAt time.Time `gorm:"type:datetime(0);not null;default:current_timestamp"`
+	ID          string       `gorm:"type:varchar(36);primaryKey;not null"`
+	UserID      string       `gorm:"type:varchar(36);type:varchar(36);not null"`
+	ExpiredAt   time.Time    `gorm:"type:datetime(0);not null"`
+	CreatedAt   time.Time    `gorm:"type:datetime(0);not null;default:current_timestamp"`
+	UserAccount UserAccounts `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 }
 
 type Token struct {
@@ -53,8 +54,7 @@ func (r UserSessionRepository) Register(session models.Session) (string, error) 
 	var sess UserSessions
 	result = r.client.
 		Where("id = ? AND user_id = ?", session.Token(), session.Owner()).
-		Limit(1).
-		Find(&sess)
+		First(&sess)
 
 	if err := result.Error; err != nil {
 		switch {
@@ -103,7 +103,7 @@ func (r UserSessionRepository) FindOwner(token string) (string, error) {
 }
 
 func (r UserSessionRepository) Delete(owner, token string) error {
-	result := r.client.Delete(UserSessions{
+	result := r.client.Unscoped().Delete(UserSessions{
 		UserID: owner,
 		ID:     token,
 	})

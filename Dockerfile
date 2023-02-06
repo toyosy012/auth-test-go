@@ -1,9 +1,10 @@
 FROM golang:1.20-alpine3.17 AS builder
 
 WORKDIR /root
-
+COPY go.* ./
+RUN go mod download
 COPY . /root
-RUN go get && go install && GOOS=linux go build main.go
+RUN GOOS=linux go build main.go
 
 FROM alpine:3.17
 
