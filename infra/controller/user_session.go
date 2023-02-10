@@ -28,7 +28,19 @@ type UserSession struct {
 	session services.UserSession
 }
 
-func (a UserSession) Login(c *gin.Context) {
+type SessionToken struct {
+	Value string `json:"value" binding:"required,uuid" example:"12345678-89ab-cdef-ghij-klmopqrstuvw"`
+}
+
+// Login get session token
+// @Summary Return session token for login user
+// @Tags Login
+// @Param loginFrom body controller.loginForm true "Email and Password"
+// @Produce json
+// @Success 200 {object} controller.SessionToken
+// @Failure default {object} controller.errResponse
+// @Router  /session/login [post]
+func (a UserSessionHandler) Login(c *gin.Context) {
 	var form loginForm
 	err := c.Bind(&form)
 	if err != nil {
@@ -78,7 +90,19 @@ func (a UserSession) CheckAuthenticatedOwner(c *gin.Context) {
 	c.Next()
 }
 
-func (a UserSession) Logout(c *gin.Context) {
+// Logout delete session token
+// @Summary Return status by delete session
+// @Tags Logout
+// @securityDefinitions.apiKey ApiKeyAuth
+// @Param id path string true "User ID by UUID"
+// @Produce json
+// @Success 200
+// @Failure 400 {object} controller.errResponse
+// @Failure 401 {object} controller.errResponse
+// @Failure 500 {object} controller.errResponse
+// @Router  /session/logout/{id} [delete]
+// @Security Bearer
+func (a UserSessionHandler) Logout(c *gin.Context) {
 	t := c.GetHeader("Authorization")
 	token := strings.Replace(t, "Bearer ", "", 1)
 	var params userPathParams
