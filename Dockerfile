@@ -2,9 +2,9 @@ FROM golang:1.20-alpine3.17 AS builder
 
 WORKDIR /root
 COPY go.* ./
-RUN go mod download
+RUN go mod download && go install github.com/swaggo/swag/cmd/swag@v1.8.0
 COPY . /root
-RUN GOOS=linux go build main.go
+RUN swag init && GOOS=linux go build main.go
 
 FROM alpine:3.17
 

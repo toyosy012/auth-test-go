@@ -13,12 +13,12 @@ import (
 )
 
 type RefreshToken struct {
-	Value string `json:"value" binding:"required,uuid"`
+	Value string `json:"value" binding:"required,uuid" example:"12345678-89ab-cdef-ghij-klmopqrstuvw"`
 }
 
 type AuthToken struct {
 	IDToken string `json:"id" binding:"required"`
-	Refresh string `json:"refresh" binding:"required,uuid"`
+	Refresh string `json:"refresh" binding:"required,uuid" example:"12345678-89ab-cdef-ghij-klmopqrstuvw"`
 }
 
 func NewTokenHandler(service services.Authorizer) TokenHandler {
@@ -31,6 +31,14 @@ type TokenHandler struct {
 	authenticateSvc services.Authorizer
 }
 
+// Claim get session token
+// @Summary Return id token for user
+// @Tags Claim
+// @Param loginFrom body controller.loginForm true "Email and Password"
+// @Produce json
+// @Success 200 {object} controller.AuthToken
+// @Failure default {object} controller.errResponse
+// @Router  /auth/claim [post]
 func (h TokenHandler) Claim(c *gin.Context) {
 	var form loginForm
 	err := c.Bind(&form)
@@ -50,6 +58,14 @@ func (h TokenHandler) Claim(c *gin.Context) {
 	c.JSON(http.StatusOK, AuthToken{IDToken: token.IDToken(), Refresh: token.Refresh()})
 }
 
+// Refresh get session token
+// @Summary Refresh id token by refresh token for user
+// @Tags Refresh
+// @Param loginFrom body controller.RefreshToken true "value with refresh token"
+// @Produce json
+// @Success 200 {object} controller.AuthToken
+// @Failure default {object} controller.errResponse
+// @Router  /auth/refresh [post]
 func (h TokenHandler) Refresh(c *gin.Context) {
 	var refresh RefreshToken
 	err := c.Bind(&refresh)
