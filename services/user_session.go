@@ -64,7 +64,10 @@ func (s UserSession) FindOwner(id, token string) error {
 	}
 
 	if owner != id {
-		return NewApplicationErr(FailedCheckLogin, errors.New("ログイン情報のユーザと異なります"))
+		return NewApplicationErr(
+			FailedCheckLogin,
+			NewApplicationErr(InvalidLoginSession, errors.New(id)),
+		)
 	}
 
 	return nil

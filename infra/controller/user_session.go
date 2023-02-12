@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -13,8 +12,8 @@ import (
 	"auth-test/services"
 )
 
-func NewSessionAuth(service services.UserSession) UserSession {
-	return UserSession{
+func NewSessionAuth(service services.UserSession) UserSessionHandler {
+	return UserSessionHandler{
 		session: service,
 	}
 }
@@ -24,7 +23,7 @@ type loginForm struct {
 	Password string `json:"password" binding:"required,nist_sp_800_63,min=8,max=72" example:"string"`
 }
 
-type UserSession struct {
+type UserSessionHandler struct {
 	session services.UserSession
 }
 
@@ -60,7 +59,7 @@ func (a UserSessionHandler) Login(c *gin.Context) {
 	return
 }
 
-func (a UserSession) CheckAuthenticatedOwner(c *gin.Context) {
+func (a UserSessionHandler) CheckAuthenticatedOwner(c *gin.Context) {
 	t := c.GetHeader("Authorization")
 
 	token := strings.Replace(t, "Bearer ", "", 1)
@@ -81,7 +80,7 @@ func (a UserSession) CheckAuthenticatedOwner(c *gin.Context) {
 
 	err := a.session.FindOwner(params.ID, token)
 	if err != nil {
-		status, response := newErrResponse(err, params.ID)
+		status, response := newErrResponse(err, token)
 		c.AbortWithStatusJSON(status, response)
 		return
 	}
