@@ -24,18 +24,18 @@ type UserAccountHandler struct {
 }
 
 type userPathParams struct {
-	ID string `uri:"id" binding:"required,uuid"`
+	ID string `uri:"id" binding:"required,uuid" example:"12345678-89ab-cdef-ghij-klmopqrstuvw"`
 }
 
 type inputUserAccount struct {
-	Email    string `json:"email" binding:"required,email"`
+	Email    string `json:"email" binding:"required,email" example:"test@example.com"`
 	Name     string `json:"name" binding:"required"`
-	Password string `json:"password" binding:"required,nist_sp_800_63"`
+	Password string `json:"password" binding:"required,min=8,max=72,nist_sp_800_63" minLength:"8" maxLength:"72" example:"string"`
 }
 
 type userAccountResponse struct {
-	ID    string `json:"id" binding:"required,uuid"`
-	Email string `json:"email" binding:"required,email"`
+	ID    string `json:"id" binding:"required,uuid" example:"12345678-89ab-cdef-ghij-klmopqrstuvw"`
+	Email string `json:"email" binding:"required,email" example:"test@example.com"`
 	Name  string `json:"name" binding:"required"`
 }
 
