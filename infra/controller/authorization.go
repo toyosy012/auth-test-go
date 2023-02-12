@@ -13,12 +13,12 @@ import (
 )
 
 type RefreshToken struct {
-	Value string `json:"value" binding:"required,uuid"`
+	Value string `json:"value" binding:"required,uuid" example:"12345678-89ab-cdef-ghij-klmopqrstuvw"`
 }
 
 type AuthToken struct {
 	IDToken string `json:"id" binding:"required"`
-	Refresh string `json:"refresh" binding:"required,uuid"`
+	Refresh string `json:"refresh" binding:"required,uuid" example:"12345678-89ab-cdef-ghij-klmopqrstuvw"`
 }
 
 func NewTokenHandler(service services.Authorizer) TokenHandler {

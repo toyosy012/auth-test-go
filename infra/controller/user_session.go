@@ -20,8 +20,8 @@ func NewSessionAuth(service services.UserSession) UserSession {
 }
 
 type loginForm struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,nist_sp_800_63"`
+	Email    string `json:"email" binding:"required,email" example:"test@example.com"`
+	Password string `json:"password" binding:"required,nist_sp_800_63,min=8,max=72" example:"string"`
 }
 
 type UserSession struct {
@@ -56,8 +56,7 @@ func (a UserSessionHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.Header("Authorization", fmt.Sprintf("Bearer %s", token))
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, SessionToken{Value: token})
 	return
 }
 
