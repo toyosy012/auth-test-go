@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	uuidTokenFormat = "フォーマットを 12345678-89ab-cdef-ghij-klmopqrstuvw にして下さい"
+	uuidTokenFormat    = "フォーマットを 12345678-89ab-cdef-ghij-klmopqrstuvw にして下さい"
+	invalidRequestBody = "リクエストボディエラー"
 )
 
 var (
@@ -70,13 +71,13 @@ func (e AuthBodyError) getResponse() errResponse {
 	switch errorMsg.Field() {
 	case "Password":
 		response = newValidationErr(
-			"パスワードが不正なフォーマットです",
-			"",
+			invalidRequestBody,
+			"有効なパスワードではありません",
 		)
 	case "Email":
 		response = newValidationErr(
+			invalidRequestBody,
 			fmt.Sprintf("emailアドレス %s は不正なフォーマットです", errorMsg.Value()),
-			"",
 		)
 	case "Value":
 		response = newValidationErr(

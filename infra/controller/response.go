@@ -16,7 +16,7 @@ func newValidationErr(message string, detail string) errResponse {
 }
 
 type errResponse struct {
-	Message string `json:"message"`
+	Message string `json:"message" binding:"required"`
 	Detail  string `json:"detail,omitempty"`
 }
 
@@ -29,8 +29,8 @@ func newErrResponse(err error, detail string) (status int, responseErr errRespon
 	switch {
 	case errors.Is(applicationErr, services.InternalServerErr):
 		status = http.StatusInternalServerError
-	case errors.Is(applicationErr, services.EmptyToken):
-		status = http.StatusForbidden
+	case errors.Is(applicationErr, services.NoSessionRecord):
+		status = http.StatusUnauthorized
 	default:
 		status = http.StatusBadRequest
 	}

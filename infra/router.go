@@ -7,8 +7,11 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"github.com/kelseyhightower/envconfig"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 
+	"auth-test/docs"
 	"auth-test/infra/auth"
 	"auth-test/infra/configuration"
 	"auth-test/infra/controller"
@@ -69,6 +72,9 @@ func setUpRouter(env configuration.Environment, dbClient gorm.DB, validate valid
 	userSessionController := controller.NewSessionAuth(userSessionSvc)
 
 	router := gin.Default()
+	if err := router.SetTrustedProxies(nil); err != nil {
+		return nil, err
+	}
 	v1 := router.Group("v1")
 	usersRouter := v1.Group("users") // デバック用APIのため各認証グループ外に設定
 	{
@@ -102,5 +108,7 @@ func setUpRouter(env configuration.Environment, dbClient gorm.DB, validate valid
 		}
 	}
 
+	docs.SwaggerInfo.BasePath = "/v1"
+	v1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	return router, nil
 }

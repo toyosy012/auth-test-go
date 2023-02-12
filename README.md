@@ -9,71 +9,63 @@
      * IDトークンの有効期限が切れた時のみリフレッシュトークンを用いて新しいIDトークンを発行
      * OpenID connectにおけるID Providerに相当する処理を実装
 
+## Swagger
+
+* 実行前にswaggerを生成してください
+  * Dockerfileには組み込み済み
+* gin-swagger生成における注意点は以下の通りです
+  * 1つのハンドラ関数を2つのエンドポイントで使用してます
+  * ただし、swaggerの仕様で1つのハンドラ関数に定義できるエンドポイントのswaggerコメントは1つまでです
+  * そのため試行するエンドポイント毎に書き直し、swaggerを再生成する必要があります
+  * ./infra/controller/user_accounts.goの`@Router`を試行するエンドポイントに合わせてください
+  * `@Router`を変更するのは以下の関数です
+    * Get
+    * Update
+    * Delete
+
+```
+# session or auth のいずれかでswaggerを生成します
+# /v1/session/users を試行する場合は下記のように記述
+# @Router /session/users/
+
+# /v1/auth/session を試行する場合は下記のように記述
+# @Router /auth/users/
+
+# ローカルでswaggerを生成する場合
+$ go get -u github.com/swaggo/swag/cmd/swag
+$ go install github.com/swaggo/swag/cmd/swag@v1.8.0
+$ swag init
+```
+
 ## 実行方法
 
 ```
 # 環境変数設定ファイル用意
 $ vi environment.txt
-PASSWORD=        // MySQLのパスワード
+# MySQLのrootパスワード
+PASSWORD=
 ENCRYPT_SECRET=
-EMAIL=
-USER_PASSWORD=  // Migration時のユーザアカウントのパスワード
-USER_NAME=
 $ export $(cat environment.txt | grep -v ^#)
 
-# docker-compose.yamlで下記のイメージ名で起動
+# docker-compose.yamlには下記のイメージ名でAPIを起動
 $ docker build -t auth-test-go .
 $ docker compose up
 
 # MySQLへのDB初期化
-# docker composeにより別のターミナルを使用する場合には再度環境変数を読み込む
-$ $ export $(cat environment.txt | grep -v ^#)
+# compose後に別ターミナルを使用する場合、再度環境変数を読み込む
+$ export $(cat environment.txt | grep -v ^#)
 $ cd migration
+# マイグレーション実行
 $ go run main.go
-
-$ curl http://0.0.0.0:8080/v1/users
 ```
 
-## API
+## アクセス方法
 
-### API一覧
-
-- `password`には乱数生成した文字列を使用してください
-
-```
-GET    /v1/users
-POST   /v1/users/new
--H "content-type: application/json" -d '{"email": "test@example.com", "password": "", "name": "test"}'
-
-# セッション認証
-# トークンはレスポンスの`Authorization`ヘッダーから取得
-POST   /v1/session/login
--v -H "content-type: application/json" -d '{"email": "test@example.com", "password": ""}'
-DELETE /v1/session/logout/:id
--H "Authorization: Bearer `session token`"
-GET    /v1/session/users/:id
--H "Authorization: Bearer `session token`"
-PUT    /v1/session/users/:id
--H "Authorization: Bearer `session token`" -H "content-type: application/json" -d '{"email": "test@example.com", "password": "", "name": "test_updated"}'
-DELETE /v1/session/users/:id
--H "Authorization: Bearer `session token`"
-
-# oauth認証
-POST   /v1/oauth/claim
--H "content-type: application/json" -d '{"email": "test@example.com", "password": ""}'
-# claimから得たリフレッシュトークンをvalueに渡す(デフォルト1h有効)
-POST   /v1/oauth/refresh
--H "content-type: application/json" -d '{"value": ""}'
-GET    /v1/oauth/users/:id
--H "Authorization: Bearer `access oauth token`"
-PUT    /v1/oauth/users/:id
--H "content-type: application/json" -H "Authorization: Bearer `access oauth token`" -d '{"email": "test@example.com", "password": "", "name": "test_updated"}'
-DELETE /v1/oauth/users/:id
--H "Authorization: Bearer `access oauth token`"
-```
+- ブラウザで下記のURLでswagger UIにアクセス
+  - http://localhost:8080/v1/swagger/index.html
+- `/v1/session/users/`の場合は Login/Logout を使用してください
+- `/v1/auth/users/`の場合は Claim/Refresh を使用してください
 
 ## 注意点
 
 1. リクエストボディのフォーマットに全角文字が存在する場合にpanicを起こす問題が未解決
-
-## 

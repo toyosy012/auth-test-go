@@ -24,21 +24,31 @@ type UserAccountHandler struct {
 }
 
 type userPathParams struct {
-	ID string `uri:"id" binding:"required,uuid"`
+	ID string `uri:"id" binding:"required,uuid" example:"12345678-89ab-cdef-ghij-klmopqrstuvw"`
 }
 
 type inputUserAccount struct {
-	Email    string `json:"email" binding:"required,email"`
+	Email    string `json:"email" binding:"required,email" example:"test@example.com"`
 	Name     string `json:"name" binding:"required"`
-	Password string `json:"password" binding:"required,nist_sp_800_63"`
+	Password string `json:"password" binding:"required,min=8,max=72,nist_sp_800_63" minLength:"8" maxLength:"72" example:"string"`
 }
 
 type userAccountResponse struct {
-	ID    string `json:"id" binding:"required,uuid"`
-	Email string `json:"email" binding:"required,email"`
+	ID    string `json:"id" binding:"required,uuid" example:"12345678-89ab-cdef-ghij-klmopqrstuvw"`
+	Email string `json:"email" binding:"required,email" example:"test@example.com"`
 	Name  string `json:"name" binding:"required"`
 }
 
+// Get is getting user account
+// @Summary Get a user account
+// @Tags UserAccount
+// @securityDefinitions.apiKey ApiKeyAuth
+// @Param id path string true "User ID by UUID"
+// @Produce json
+// @Success 200 {object} controller.userAccountResponse
+// @Failure default {object} controller.errResponse
+// @Router  /auth/users/{id} [get]
+// @Security Bearer
 func (h UserAccountHandler) Get(c *gin.Context) {
 	var params userPathParams
 	if err := c.BindUri(&params); err != nil {
@@ -57,6 +67,13 @@ func (h UserAccountHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, userAccountResponse{ID: userAccount.ID(), Email: userAccount.Email(), Name: userAccount.Name()})
 }
 
+// List is getting user accounts
+// @Summary Get user accounts
+// @Tags UserAccounts
+// @Produce json
+// @Success 200 {object} []controller.userAccountResponse "空配列の場合nullになってしまうので注意"
+// @Failure default {object} controller.errResponse
+// @Router /users [get]
 func (h UserAccountHandler) List(c *gin.Context) {
 	accounts, err := h.service.List()
 	if err != nil {
@@ -73,6 +90,15 @@ func (h UserAccountHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, results)
 }
 
+// Create is creation user accounts
+// @Summary Create a user account
+// @Tags UserAccount
+// @securityDefinitions.apiKey ApiKeyAuth
+// @Param inputUserAccount body controller.inputUserAccount true "Email, Password and UserName"
+// @Produce json
+// @Success 200 {object} controller.userAccountResponse
+// @Failure default {object} controller.errResponse
+// @Router /users/new [post]
 func (h *UserAccountHandler) Create(c *gin.Context) {
 	var account inputUserAccount
 	err := c.Bind(&account)
@@ -94,6 +120,17 @@ func (h *UserAccountHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, userAccountResponse{ID: result.ID(), Email: result.Email(), Name: result.Name()})
 }
 
+// Update is update user accounts
+// @Summary Update a user account
+// @Tags UserAccount
+// @securityDefinitions.apiKey ApiKeyAuth
+// @Param id path string true "user id"
+// @Param inputUserAccount body controller.inputUserAccount true "Email, Password and UserName"
+// @Produce json
+// @Success 200 {object} controller.userAccountResponse
+// @Failure default {object} controller.errResponse
+// @Router /auth/users/{id} [put]
+// @Security Bearer
 func (h *UserAccountHandler) Update(c *gin.Context) {
 	var params userPathParams
 	if err := c.BindUri(&params); err != nil {
@@ -120,6 +157,15 @@ func (h *UserAccountHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, userAccountResponse{ID: result.ID(), Email: result.Email(), Name: result.Name()})
 }
 
+// Delete is deletion user accounts
+// @Summary Delete a user account
+// @Tags UserAccount
+// @Param id path string true "User ID by UUID"
+// @Produce json
+// @Success 200
+// @Failure default {object} controller.errResponse
+// @Router /auth/users/{id} [delete]
+// @Security Bearer
 func (h UserAccountHandler) Delete(c *gin.Context) {
 	var params userPathParams
 	if err := c.BindUri(&params); err != nil {

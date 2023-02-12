@@ -93,7 +93,7 @@ func (r UserSessionRepository) FindOwner(token string) (string, error) {
 	if err := result.Error; err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
-			return "", services.NewApplicationErr(services.NoUserRecord, err)
+			return "", services.NewApplicationErr(services.NoSessionRecord, err)
 		default:
 			return "", services.NewApplicationErr(services.InternalServerErr, err)
 		}
