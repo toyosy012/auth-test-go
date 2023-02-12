@@ -3,9 +3,6 @@ package configuration
 import "time"
 
 type Environment struct {
-	Email             string        `envconfig:"EMAIL" required:"true"`
-	UserPassword      string        `envconfig:"USER_PASSWORD" required:"true"`
-	UserName          string        `envconfig:"USER_NAME" required:"true"`
 	User              string        `default:"root"`
 	Password          string        `required:"true"`
 	Host              string        `default:"0.0.0.0"`

@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
 	"auth-test/infra/configuration"
 	"auth-test/infra/db"
-	"auth-test/models"
 )
 
 func main() {
@@ -44,16 +42,4 @@ func main() {
 	if err != nil {
 		log.Fatalf("テーブルのマイグレーションに失敗。: %s \n", err.Error())
 	}
-
-	newID := uuid.New()
-	encrypted, err := models.NewEncryption(env.UserPassword)
-	if err != nil {
-		log.Fatal("パスワードの保存に失敗")
-	}
-	mysqlDB.Create(&db.UserAccounts{
-		ID:    newID.String(),
-		Email: env.Email,
-		Name:  env.UserName,
-		Hash:  encrypted.Hash(),
-	})
 }
